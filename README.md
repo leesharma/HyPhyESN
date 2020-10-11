@@ -53,3 +53,11 @@ If you plan to run the file from a different folder, replace `"."` with the path
 You can set up the Juno console using the steps in ["In the REPL"](#in-the-repl) above.
 
 If you plan to run from a file, use the steps in ["In a File"](#in-a-file) above.
+
+### Verify Setup
+
+You should be able to run this script without errors:
+
+```bash
+% julia main.jl
+```
