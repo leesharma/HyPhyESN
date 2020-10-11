@@ -21,6 +21,8 @@ module LorenzData
     data = Matrix(hcat(v...))
   end
 
+  # public interface
+
   function train_test(; train_len=5000, predict_len=1250, shift=300,      # split config
                         u0=u0_default, tspan=tspan_default, p=p_default,  # lorenz config
                         dt=0.02, solver=ABM54())                          # solver config
