@@ -13,9 +13,9 @@ Class project for CMSC 727
 You can use the interactive Julia REPL either through your terminal or in Juno.
 To experiment in the REPL, you need to first activate the project environment:
 
-```
-$ cd $(project_root)            # move to the HyPhyESN root directory
-$ julia                         # start the Julia REPL
+```bash
+% cd $(project_root)                # move to the HyPhyESN root directory
+% julia                             # start the Julia REPL
 
    _       _ _(_)_     |  Documentation: https://docs.julialang.org
   (_)     | (_) (_)    |
@@ -24,12 +24,13 @@ $ julia                         # start the Julia REPL
   | | |_| | | | (_| |  |  Version 1.5.2 (2020-09-23)
  _/ |\__'_|_|_|\__'_|  |  Official https://julialang.org/ release
 |__/                   |
+```
+```julia
+julia> ]                            # open the package manager context
 
-julia> ]                        # open the package manager context
-
-(@v1.5) pkg>  activate .        # activate our Project.toml
-(HyPhyESN) pkg> instantiate     # instantiate the project (adding deps, etc.)
-(HyPhyESN) pkg> st              # print project status (should show deps)
+(@v1.5) pkg>  activate .            # activate our Project.toml
+(HyPhyESN) pkg> instantiate         # instantiate the project (adding deps, etc.)
+(HyPhyESN) pkg> st                  # print project status (should show deps)
   [1dea7af3] OrdinaryDiffEq v5.43.0
   [65888b18] ParameterizedFunctions v5.6.0
   [7c2d2b1e] ReservoirComputing v0.6.1
