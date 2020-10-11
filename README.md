@@ -16,16 +16,8 @@ To experiment in the REPL, you need to first activate the project environment:
 ```bash
 % cd $(project_root)                # move to the HyPhyESN root directory
 % julia                             # start the Julia REPL
+...
 
-   _       _ _(_)_     |  Documentation: https://docs.julialang.org
-  (_)     | (_) (_)    |
-   _ _   _| |_  __ _   |  Type "?" for help, "]?" for Pkg help.
-  | | | | | | |/ _` |  |
-  | | |_| | | | (_| |  |  Version 1.5.2 (2020-09-23)
- _/ |\__'_|_|_|\__'_|  |  Official https://julialang.org/ release
-|__/                   |
-```
-```julia
 julia> ]                            # open the package manager context
 
 (@v1.5) pkg>  activate .            # activate our Project.toml
@@ -39,9 +31,7 @@ julia> ]                            # open the package manager context
 # optional, will save start-up time later
 (HyPhyESN) pkg> precompile
 Precompiling HyPhyESN...
-.
-.
-.
+...
 ```
 
 The `activate` step must be performed for every new Julia context (e.g. whenever you restart the REPL).
