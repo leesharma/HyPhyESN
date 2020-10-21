@@ -10,12 +10,15 @@ using .LorenzData
 include("./models/base_esn.jl")
 using .BaseESN
 
+include("./eval/metrics.jl")
+using .Metrics: plot_predictions, plot_errors
+
 
 function main()
 
   # Data Loading
 
-  train, test = LorenzData.train_test(train_len=3000, predict_len=5)
+  train, test = LorenzData.train_test(train_len=3000, predict_len=1000)
 
   println("Lorenz System")
   println("-------------")
@@ -35,11 +38,13 @@ function main()
 
   esn = BaseESN.esn(train)
   W_out = BaseESN.train(esn)
-  output = BaseESN.predict(esn, 5, W_out)
+  output = BaseESN.predict(esn, 1000, W_out)
 
   println("Predictions:")
   display(DataFrame(output', ["x","y","z"]))
   println()
+  plot_predictions(test, output)
+  # plot_errors(X_test, output)
 
 end
 
