@@ -95,7 +95,7 @@ module Metrics
   """
     plot_error(y, y_pred)
 
-  Plots the average error over time. Shows a horizontal marker for max
+  Plots the instantaneous error over time. Shows a horizontal marker for max
   error level (for the time horizon calculation).
   """
   function plot_error(y, y_pred; labels=["X","Y","Z"], errors=normalized_errors(y,y_pred), E_max=0.4, dt=1)
@@ -107,6 +107,25 @@ module Metrics
     plot!(plt, x, errors, label="Prediction error")
     plot!(plt, x, repeat([E_max],n), label="Max error target")
     ylabel!(plt, "Normalized Error")
+    xlabel!(plt, "\$\\lambda_{max}t\$")
+    plt
+  end
+
+  """
+    plot_avg_error(y, y_pred)
+
+  Plots the average error over time.
+  """
+  function plot_avg_error(y, y_pred; labels=["X","Y","Z"], errors=normalized_errors(y,y_pred), E_max=0.4, dt=1)
+    time_avg(data) = [sum(data[1:i])/i for i in 1:length(data)]
+
+    n = size(errors,1)
+    x = range(1, dt*n, length=n) * lyapunov_max  # scale by largest Lyapunov exponent
+
+    plt = plot()
+    plot!(plt, title="Lorenz Attractor Time-Average Prediction Error")
+    plot!(plt, x, time_avg(errors), legend=false)
+    ylabel!(plt, "Average Normalized Error")
     xlabel!(plt, "\$\\lambda_{max}t\$")
     plt
   end
