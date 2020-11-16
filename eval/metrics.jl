@@ -1,5 +1,7 @@
 module Metrics
-  export root_mean_squared_errors
+  export root_mean_squared_errors, normalized_errors, time_horizon,
+         plot_predictions, plot_predictions_animated,
+         plot_error, plot_avg_error
 
   using Plots
   using Statistics: mean
