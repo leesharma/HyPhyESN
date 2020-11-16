@@ -5,12 +5,12 @@ module BaseESN
 
   # default model parameters
   default_params = (
-    approx_res_size = 300,   # size of the reservoir
-    radius = 1.2,            # desired spectral radius
+    approx_res_size = 500,   # size of the reservoir
+    radius = 1.0,            # desired spectral radius
     activation = tanh,       # neuron activation function
-    degree = 6,              # degree of connectivity of the reservoir
+    degree = 3,              # degree of connectivity of the reservoir
     sigma = 0.1,             # input weight scaling
-    beta = 0.0,              # ridge
+    beta = 0.0001,           # ridge
     alpha = 1.0,             # leaky coefficient
     nla_type = NLAT2(),      # non linear algorithm for the states
     extended_states = false, # if true extends the states with the input
