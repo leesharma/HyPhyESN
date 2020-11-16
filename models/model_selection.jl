@@ -1,7 +1,7 @@
 module ModelSelection
   """Parameter search utilities"""
 
-  include("./metrics.jl")
+  include("../eval/metrics.jl")
   using .Metrics: time_horizon
   include("../models/base_esn.jl")
   using .BaseESN: run_trial
