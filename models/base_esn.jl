@@ -43,11 +43,11 @@ module BaseESN
     output = ESNpredict(esn, predict_len, W_out)
   end
 
-  function run_trial(train, test; opts=default_params)
+  function run_trial(train_data, test_data; opts=default_params)
     """Creates, trains, and evaluates an ESN with the given options."""
-    test_len = size(test, 2)
-    esn = esn_init(train, opts=opts)
-    W_out = ESNtrain(esn, opts.beta)
+    test_len = size(test_data, 2)
+    esn = esn_init(train_data, opts=opts)
+    W_out = train(esn, beta=opts[:beta])
 
     predict(esn, test_len, W_out)
   end
