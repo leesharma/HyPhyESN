@@ -64,9 +64,13 @@ function main()
     extended_states = false, # if true extends the states with the input
   )
   time_horizons = [
-    Metrics.time_horizon(test, BaseESN.run_trial(train,test,opts=opts), E_max=E_max, dt=dt)
+    begin
+      print(".")
+      Metrics.time_horizon(test, BaseESN.run_trial(train,test,opts=opts), E_max=E_max, dt=dt)
+    end
     for _ in 1:n_trials
   ]
+  println()
   @printf(
     "  Average time horizon:  %0.2f ± %0.1f Lynapunov times (n=%d)\n",
     mean(time_horizons), std(time_horizons), n_trials

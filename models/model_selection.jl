@@ -3,7 +3,7 @@ module ModelSelection
 
   include("../eval/metrics.jl")
   using .Metrics: time_horizon
-  include("../models/base_esn.jl")
+  include("../models/base_esn_optim.jl")
   using .BaseESN: run_trial
 
   using Printf: @printf

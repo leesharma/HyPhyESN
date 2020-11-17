@@ -1,24 +1,17 @@
 module BaseESN
-  """Demo of a custom train function using Flux.jl"""
+  """Demo of a custom train function (still using ridge regression)"""
 
   export run_trial
 
-  using Statistics: mean
+  using MLJLinearModels
   using ReservoirComputing: ESN, ESNtrain, ESNpredict, NLAT2, nla
-  # Frankenstein training dependencies
-  using Flux
-  using Flux: @epochs, params, throttle, train!
-  using Flux.Data: DataLoader
-  using Flux.Optimise: ADAM
-  using DiffEqFlux: sciml_train
-  using Optim
 
   # default model parameters
   default_params = (
-    approx_res_size = 300,   # size of the reservoir
-    radius = 1.2,            # desired spectral radius
+    approx_res_size = 500,   # size of the reservoir
+    radius = 1.0,            # desired spectral radius
     activation = tanh,       # neuron activation function
-    degree = 6,              # degree of connectivity of the reservoir
+    degree = 3,              # degree of connectivity of the reservoir
     sigma = 0.1,             # input weight scaling
     beta = 0.0001,           # ridge
     alpha = 1.0,             # leaky coefficient
@@ -43,26 +36,20 @@ module BaseESN
     )
   end
 
-  function train(esn; beta=0.0, batchsize=128, opt=ADAM(0.001), num_epochs=100)
+  function train(esn; beta=0.0)
     """Returns a trained readout layer using ridge regression."""
-
     X = nla(esn.nla_type, esn.states) # reservoir output
     Y = esn.train_data                # groundtruth
-    W_out = zeros(size(Y,1),size(X,1))
 
-    # training setup, including batch size, shuffling, etc.
-    data_loader = DataLoader((X,Y), batchsize=batchsize, shuffle=true)
+    W_out = zeros(Float64,size(Y,1),size(X,1))
 
-    # Flux iterative optimization (warm start)
-    # l2_loss(x, y) = mean((W_out*x.-y).^2) + beta*mean(W_out.^2)
-    # show_loss_cb() = @show(l2_loss(X,Y))
-    # @epochs num_epochs train!(l2_loss, params(W_out), data_loader, opt)
+    solver = MLJLinearModels.Analytical(iterative=true)
+    loss = MLJLinearModels.RidgeRegression(lambda=beta, fit_intercept=false)
 
-    # Optim fine-tuning
-    l2_loss(W) = mean((W*X.-Y).^2) + beta*mean(W.^2)
-    res = sciml_train(l2_loss, W_out, LBFGS(), maxiters=3000)
-
-    W_out = Optim.minimizer(res)
+    for i=1:size(Y,1)
+        W_out[i,:] = MLJLinearModels.fit(loss, X', Y[i,:], solver=MLJLinearModels.Analytical())
+    end
+    W_out
   end
 
   function predict(esn, predict_len, W_out)
