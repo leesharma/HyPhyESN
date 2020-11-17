@@ -7,7 +7,7 @@ conda create --name py38_727 python=3.8
 ```
 2. Activate the environement
 ```
-conda create --name py38_727 python=3.8
+conda activate py38_727
 ```
 
 3. Install packages
