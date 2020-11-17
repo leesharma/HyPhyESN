@@ -10,7 +10,7 @@ function Run_Spectral_Dynamics()
     # T21 grid
     num_fourier = 21  # Fourier wave number truncation
     nθ = 32  # Latitudinal grid size
-    nd = 20  # Vertical slices
+    nd = 10  # Vertical slices
 
     # T42 grid
     #num_fourier = 42  # Fourier wave number truncation
@@ -23,13 +23,14 @@ function Run_Spectral_Dynamics()
     #nd = 64
 
     #-- Define temporal parameters
-    end_day = 2 # Default 1200
-    spinup_day = 1 # Default 200; days to let model reach equilibrium before pulling data
+    end_day = 600 # Default 1200
+    spinup_day = 200 # Default 200; days to let model reach equilibrium before pulling data
 
     physics_params = Dict{String,Float64}("σ_b"=>0.7, "k_f" => 1.0, "k_a" => 1.0/40.0, "k_s" => 1.0/4.0, "ΔT_y" => 60.0, "Δθ_z" => 10.0)
     op_man = Atmos_Spectral_Dynamics_Main(physics_params, num_fourier, nθ, nd, end_day, spinup_day)
     #Finalize_Output!(op_man, "HS_OpM.dat", "HS_mean.dat")  # To implement parameterizations
     Sigma_Zonal_Mean_Contourf(op_man, "./data/data_plots/spectral_dynamics_contourf_$grid_name")
+    return  op_man
 end
 
 function Atmos_Spectral_Dynamics_Main(physics_params::Dict{String, Float64}, num_fourier::Int64 = 42, nθ::Int64 = 64, nd::Int64 = 20, end_day::Int64 = 1200, spinup_day::Int64 = 200)
