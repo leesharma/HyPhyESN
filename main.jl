@@ -1,11 +1,11 @@
 # Initialize the environment
 using Pkg; Pkg.activate("."); Pkg.instantiate()
 
-using DataFrames    # for easy data formatting and statistics
-using Statistics: mean, std
-using Printf:@printf
-using BenchmarkTools:@benchmark
-using ReservoirComputing: NLAT2
+using DataFrames                  # for easy data formatting and statistics
+using Statistics: mean, std       # for easy output stats
+using Printf:@printf              # for printing output stats
+using BenchmarkTools:@benchmark   # benchmark ESN training
+using ReservoirComputing: NLAT2   # specify ESN options
 
 # local imports
 include("./data/lorenz.jl")
@@ -49,7 +49,7 @@ function main()
 
   # Run Trials for Metrics
 
-  n_trials = 100
+  n_trials = 10
   println("Running $(n_trials) trials...")
   E_max = 0.4  # error threshold for time horizon
   opts = (
