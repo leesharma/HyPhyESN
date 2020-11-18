@@ -28,7 +28,8 @@ function main()
   #   - dt = 0.01 seconds
   dt = 0.02
   train_len = 3000
-  test_len = 750  # ~14 Lyapunov times
+  test_len = 750    # ~14 Lyapunov times
+  E_max = 0.4       # error threshold for time horizon
   train, test = LorenzData.train_test(train_len=train_len, predict_len=test_len, dt=dt)
 
   # Describe the Data
@@ -49,9 +50,13 @@ function main()
 
   # Run Trials for Metrics
 
-  n_trials = 10
-  println("Running $(n_trials) trials...")
-  E_max = 0.4  # error threshold for time horizon
+  ##############################################################################
+  # START RUN CUSTOMIZATION
+  ##############################################################################
+  #
+  #
+  n_trials = 50
+  strategy = "closedform"    # select from [:default, :closedform, :mlj, :optim]
   opts = (
     approx_res_size = 500,   # size of the reservoir
     radius = 1.0,            # desired spectral radius
@@ -63,10 +68,18 @@ function main()
     nla_type = NLAT2(),      # non linear algorithm for the states
     extended_states = false, # if true extends the states with the input
   )
+  #
+  #
+  ##############################################################################
+  # END RUN CUSTOMIZATION
+  ##############################################################################
+
+
+  println("Running $(n_trials) trials...")
   time_horizons = [
     begin
       print(".")
-      Metrics.time_horizon(test, BaseESN.run_trial(train,test,opts=opts), E_max=E_max, dt=dt)
+      Metrics.time_horizon(test, BaseESN.run_trial(train,test_len,strategy,opts=opts), E_max=E_max, dt=dt)
     end
     for _ in 1:n_trials
   ]
@@ -80,20 +93,20 @@ function main()
   # Benchmark Trial
 
   println("Benchmarking train/predict time...")
-  display(@benchmark BaseESN.run_trial($train, $test, opts=$opts))
+  display(@benchmark BaseESN.run_trial($train, $test_len, $strategy, opts=$opts))
   println()
 
   # Plot Sample Run
 
   println("Plotting plots...")
-  predictions = BaseESN.run_trial(train, test, opts=opts)
+  predictions = BaseESN.run_trial(train, test_len, strategy, opts=opts)
   display(Metrics.plot_predictions(test, predictions, dt=dt))
   display(Metrics.plot_error(test, predictions, E_max=E_max, dt=dt))
 
   train_len = 3000
-  test_len = 3000  # longer resolution time
+  test_len = 3000  # longer resolution time for time-avg graph
   train, test = LorenzData.train_test(train_len=train_len, predict_len=test_len, dt=dt)
-  predictions = BaseESN.run_trial(train, test, opts=opts)
+  predictions = BaseESN.run_trial(train, test_len, strategy, opts=opts)
   display(Metrics.plot_avg_error(test, predictions, E_max=E_max, dt=dt))
 
 end
