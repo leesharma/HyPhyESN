@@ -19,6 +19,7 @@ end_time = 691200
 train_len = floor(Int64, (end_time/Δt)/2)
 predict_len = floor(Int64, (end_time/Δt)/4)
 shift = floor(Int64, (end_time/Δt)/4)
+approx_res_size = 3000  # NOTE this must be larger than size(train_u)[1]
 ###############################################################################
 
 
@@ -28,6 +29,6 @@ train_u, test_u, train_v, test_v = BarotropicData.train_test(train_len, predict_
 # Train the esn
 # TODO: Step 1 -  Convert back to grids, plot, and evaluate.
 # TODO: Step 2 - stack u & v in dim=1. Get ESN working, then eval results.
-esn = BaseESN.esn(train_u, 3000)
+esn = BaseESN.esn(train_u, approx_res_size)
 W_out = BaseESN.train(esn)
 output = BaseESN.predict(esn, predict_len, W_out)
