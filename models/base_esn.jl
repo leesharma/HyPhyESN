@@ -16,7 +16,7 @@ module BaseESN
 
   # public interface
 
-  function esn(data)
+  function esn(data, approx_res_size = approx_res_size)
     """Create echo state network"""
     ESN(approx_res_size,
       data,

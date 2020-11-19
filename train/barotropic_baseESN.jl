@@ -16,9 +16,9 @@ end_time = 691200
 Δt = 1800
 ###############################################################################
 # ESN training parameters. Currently throws away first 1/4 of data, trains with next 1/2, tests on final 1/4.
-train_len = floor(Int32, (end_time/Δt)/2)
-predict_len = floor(Int32, (end_time/Δt)/4)
-shift = floor(Int32, (end_time/Δt)/4)
+train_len = floor(Int64, (end_time/Δt)/2)
+predict_len = floor(Int64, (end_time/Δt)/4)
+shift = floor(Int64, (end_time/Δt)/4)
 ###############################################################################
 
 
@@ -26,8 +26,8 @@ shift = floor(Int32, (end_time/Δt)/4)
 train_u, test_u, train_v, test_v = BarotropicData.train_test(train_len, predict_len, shift, num_fourier,
                                                             nθ, nd, start_time, end_time, Δt)
 # Train the esn
-# TODO: Step 1 - Get this working for u. Convert back to grids, plot, and evaluate.
+# TODO: Step 1 -  Convert back to grids, plot, and evaluate.
 # TODO: Step 2 - stack u & v in dim=1. Get ESN working, then eval results.
-esn = BaseESN.esn(train_u)
+esn = BaseESN.esn(train_u, 3000)
 W_out = BaseESN.train(esn)
 output = BaseESN.predict(esn, predict_len, W_out)
