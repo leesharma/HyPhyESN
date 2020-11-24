@@ -6,12 +6,16 @@ module LorenzData
   # Default initial conditions
   u0_default = [1.0,0.0,0.0]
   tspan_default = (0.0,1000.0)
-  p_default = [10.0,28.0,8/3]
+  p_default = [10.0,28.0,8/3]   # canonical chaotic regime
 
   function lorenz(du,u,p,t)
-    du[1] = p[1]*(u[2]-u[1])
-    du[2] = u[1]*(p[2]-u[3]) - u[2]
-    du[3] = u[1]*u[2] - p[3]*u[3]
+    # for readability
+    sigma,rho,beta = p
+    x,y,z = u
+
+    du[1] = sigma*(y-x)
+    du[2] = x*(rho-z) - y
+    du[3] = x*y - beta*z
   end
 
   function lorenz_solution(u0=u0_default, tspan=tspan_default; p=p_default, dt=0.02, solver=ABM54())
