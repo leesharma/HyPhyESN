@@ -186,7 +186,9 @@ module SpectralData
         #Finalize_Output!(op_man, "HS_OpM.dat", "HS_mean.dat")  # To implement parameterizations
 
         # Save the data
-        save("./data/datasets/$file_name","op_man",op_man,"mesh",mesh,"temporal_grid_u",temporal_grid_u,"temporal_grid_v",temporal_grid_v,"temporal_grid_P",temporal_grid_P,"temporal_grid_T",temporal_grid_T, compress = true)
+        save("./data/datasets/$file_name","op_man",op_man,"mesh",mesh,
+             "temporal_grid_u",temporal_grid_u,"temporal_grid_v",temporal_grid_v,
+             "temporal_grid_P",temporal_grid_P,"temporal_grid_T",temporal_grid_T, compress = true)
         println("Data saved.")
     end
 

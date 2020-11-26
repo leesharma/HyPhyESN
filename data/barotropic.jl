@@ -163,7 +163,8 @@ module BarotropicData
         # Run the barotropic model, store u & v data
         temporal_grid_u, temporal_grid_v, mesh = Barotropic_Main(num_fourier, nθ, nd, start_time, end_time, Δt)
 
-        save("./data/datasets/$file_name","end_time",end_time,"Δt",Δt,"mesh",mesh,"temporal_grid_u",temporal_grid_u,"temporal_grid_v",temporal_grid_v, compress = true)
+        save("./data/datasets/$file_name","end_time",end_time,"Δt",Δt,"mesh",mesh,
+             "temporal_grid_u",temporal_grid_u,"temporal_grid_v",temporal_grid_v, compress = true)
         println("Data saved.")
 
     end

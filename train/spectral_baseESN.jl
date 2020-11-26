@@ -4,14 +4,26 @@ using .SpectralData
 include("../models/base_esn.jl")
 using .BaseESN
 
+using ReservoirComputing: ESN, ESNtrain, ESNpredict, NLAT2
 using JGCM
 using JLD
 
 ###############################################################################
 #-- Training parameters
 dataset_filepath = "./data/datasets/spectral_T21_600day_200spinup.jld"
-approx_res_size = 10000  # NOTE this must be larger than size(train_u)[1]
-beta = 0.0001
+save_name = "spectral_T21_baseESN.jld"  # Name of file to save results to
+
+model_params = (
+  approx_res_size = 10000,   # size of the reservoir; NOTE: Must be larger than all of input params.
+  radius = 1.0,              # desired spectral radius
+  activation = tanh,         # neuron activation function
+  degree = 3,                # degree of connectivity of the reservoir
+  sigma = 0.1,               # input weight scaling
+  beta = 0.0001,             # ridge
+  alpha = 1.0,               # leaky coefficient
+  nla_type = NLAT2(),        # non linear algorithm for the states
+  extended_states = false,   # if true extends the states with the input
+)
 
 # Get end day & spinup day parameters from the dataset.
 op_man = load(dataset_filepath)["op_man"]
@@ -35,9 +47,9 @@ train_data = cat(train_u, train_v, train_P, train_T, dims=1)
 nθ = mesh.nθ
 
 # Initialize ESN, then train, & predict
-esn = BaseESN.esn(train_data, approx_res_size = approx_res_size, beta = beta)
+esn = BaseESN.esn_init(train_data, opts=model_params)
 println("ESN initialized. ...")
-W_out = BaseESN.train(esn)
+W_out = BaseESN.train(esn, beta=model_params.beta)
 println("ESN trained. ...")
 prediction = BaseESN.predict(esn, predict_len, W_out)
 println("Predictions completed. ...")
@@ -56,6 +68,12 @@ test_P_grid = reshape(test_P, (2*nθ, nθ, :))
 pred_T_grid = reshape(prediction_T, (2*nθ, nθ, :))
 test_T_grid = reshape(test_T, (2*nθ, nθ, :))
 
+# Save the results
+save("./train/results/$save_name","model_params",model_params,"pred_u_grid",pred_u_grid,
+     "test_u_grid",test_u_grid,"pred_v_grid",pred_v_grid,"test_v_grid",test_v_grid,
+     "pred_P_grid",pred_P_grid,"test_P_grid",test_P_grid,"pred_T_grid",pred_T_grid,
+     "test_T_grid",test_T_grid, compress = true)
+println("Results saved. ...")
 
 # Plot the first timestep prediction & ground truth for quick peek
 Lat_Lon_Pcolormesh(mesh, pred_u_grid,  1, "./train/plots/baseESN_spectral_pred_u.png")
