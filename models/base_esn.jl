@@ -9,14 +9,14 @@ module BaseESN
   activation = tanh       # neuron activation function
   degree = 6              # degree of connectivity of the reservoir
   sigma = 0.1             # input weight scaling
-  beta = 0.0              # ridge
+  beta = 0                # ridge
   alpha = 1.0             # leaky coefficient
   nla_type = NLAT2()      # non linear algorithm for the states
   extended_states = false # if true extends the states with the input
 
   # public interface
 
-  function esn(data, approx_res_size = approx_res_size)
+  function esn(data; approx_res_size = approx_res_size, beta = beta)
     """Create echo state network"""
     ESN(approx_res_size,
       data,

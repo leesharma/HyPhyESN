@@ -1,8 +1,9 @@
 module BarotropicData
 
-    export train_test
+    export train_test, generate_dataset
 
     using JGCM
+    using JLD
 
     # Default initial conditions
     # T21 grid
@@ -13,6 +14,11 @@ module BarotropicData
     start_time_default = 0
     end_time_default = 691200
     Δt_default = 1800
+
+    # Throw out first 1/4, train next 1/2, test last 1/4
+    train_len_default = floor(Int64, (end_time_default/Δt_default)/2)
+    predict_len_default = ceil(Int64, (end_time_default/Δt_default)/4)
+    shift_default = floor(Int64, (end_time_default/Δt_default)/4)
 
     function Barotropic_Main(num_fourier = num_fourier_default,
                              nθ = nθ_default,
@@ -98,22 +104,20 @@ module BarotropicData
               temporal_grid_v[:,:,:,i] = dyn_data.grid_v_c
 
           end
-          return temporal_grid_u, temporal_grid_v
+          return temporal_grid_u, temporal_grid_v, mesh
           Lat_Lon_Pcolormesh(mesh, grid_u,  1, "./data/data_plots/Barotropic_vel_u.png")
           Lat_Lon_Pcolormesh(mesh, grid_vor, 1, "./data/data_plots/Barotropic_vor.png")
     end
 
-    function train_test(train_len = 192,
-                        predict_len = 96,
-                        shift = 96,
-                        num_fourier = num_fourier_default,
-                        nθ = nθ_default,
-                        nd = nd_default,
-                        start_time = start_time_default,
-                        end_time = end_time_default,
-                        Δt = Δt_default)
-        # Run the barotropic model, store u & v data
-        temporal_grid_u, temporal_grid_v = Barotropic_Main(num_fourier, nθ, nd, start_time, end_time, Δt)
+    function train_test(dataset_filepath;
+                        train_len = train_len_default,
+                        predict_len = predict_len_default,
+                        shift = shift_default)
+        #-- Takes a dataset & training params as input, outputs training/test sets for ESN
+        # Load data
+        mesh = load(dataset_filepath)["mesh"]
+        temporal_grid_u = load(dataset_filepath)["temporal_grid_u"]
+        temporal_grid_v = load(dataset_filepath)["temporal_grid_v"]
 
         # Grab first vertical component (others aren't solved), flatten the remaining spatial components
         # Leaves us a 2D array of spatial solutions & time step
@@ -124,7 +128,44 @@ module BarotropicData
         test_u = data_u[:, shift+train_len:shift+train_len+predict_len-1]
         test_v = data_v[:, shift+train_len:shift+train_len+predict_len-1]
 
-        return train_u, test_u, train_v, test_v
+        return train_u, test_u, train_v, test_v, mesh
 
     end
+
+    function generate_dataset()
+        #-- Generates and saves grids for u, v for later use.
+
+        ###############################################################################
+        # Name of dataset folder to save
+        file_name = "barotropic_T21_8day.jld"
+
+        # Data generation parameters
+        # T21 grid
+        num_fourier = 21  # Fourier wave number truncation
+        nθ = 32  # Latitudinal grid size
+        nd = 20  # Vertical slices, doesn't actually matter here, it just solves nd = 1
+
+        # T42 grid
+        #num_fourier = 42
+        #nθ = 64
+        #nd = 20
+
+        # CFS standard spectral grid resolution, T126L64
+        #num_fourier = 126
+        #nθ = 190
+        #nd = 64
+
+        start_time = 0  # Just leave at 0
+        end_time = 691200
+        Δt = 1800  # 1800 default
+        ###############################################################################
+
+        # Run the barotropic model, store u & v data
+        temporal_grid_u, temporal_grid_v, mesh = Barotropic_Main(num_fourier, nθ, nd, start_time, end_time, Δt)
+
+        save("./data/datasets/$file_name","end_time",end_time,"Δt",Δt,"mesh",mesh,"temporal_grid_u",temporal_grid_u,"temporal_grid_v",temporal_grid_v, compress = true)
+        println("Data saved.")
+
+    end
+
 end

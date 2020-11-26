@@ -4,31 +4,52 @@ using .BarotropicData
 include("../models/base_esn.jl")
 using .BaseESN
 
-###############################################################################
-# Data generation parameters
-# T21 grid
-num_fourier = 21  # Fourier wave number truncation
-nθ = 32  # Latitudinal grid size
-nd = 20  # Vertical slices, doesn't actually matter here, it just solves nd = 1
+using JGCM
+using JLD
 
-start_time = 0
-end_time = 691200
-Δt = 1800
+
 ###############################################################################
+#-- Training parameters
+dataset_filepath = "./data/datasets/barotropic_T21_8day.jld"
+approx_res_size = 8000  # NOTE this must be larger than size(train_u)[1]
+
+# Load some parameters from the dataset
+end_time = load(dataset_filepath)["end_time"]
+Δt = load(dataset_filepath)["Δt"]
+
 # ESN training parameters. Currently throws away first 1/4 of data, trains with next 1/2, tests on final 1/4.
 train_len = floor(Int64, (end_time/Δt)/2)
-predict_len = floor(Int64, (end_time/Δt)/4)
+predict_len = ceil(Int64, (end_time/Δt)/4)
 shift = floor(Int64, (end_time/Δt)/4)
-approx_res_size = 3000  # NOTE this must be larger than size(train_u)[1]
 ###############################################################################
 
 
 # Generate the data
-train_u, test_u, train_v, test_v = BarotropicData.train_test(train_len, predict_len, shift, num_fourier,
-                                                            nθ, nd, start_time, end_time, Δt)
-# Train the esn
-# TODO: Step 1 -  Convert back to grids, plot, and evaluate.
-# TODO: Step 2 - stack u & v in dim=1. Get ESN working, then eval results.
-esn = BaseESN.esn(train_u, approx_res_size)
+train_u, test_u, train_v, test_v, mesh = BarotropicData.train_test(dataset_filepath,
+                                                                   train_len = train_len,
+                                                                   predict_len = predict_len,
+                                                                   shift = shift)
+nθ = mesh.nθ
+
+train_data = cat(train_u, train_v, dims=1)
+
+# Initialize ESN, then train, & predict
+esn = BaseESN.esn(train_data, approx_res_size)
 W_out = BaseESN.train(esn)
-output = BaseESN.predict(esn, predict_len, W_out)
+prediction = BaseESN.predict(esn, predict_len, W_out)
+
+# Separate u & v from prediction array, reshape them to grid shape
+prediction_u = prediction[1:Int64(size(prediction)[1]/2),:]
+prediction_v = prediction[Int64(size(prediction)[1]/2+1):end,:]
+pred_u_grid = reshape(prediction_u, (2*nθ, nθ, :))
+test_u_grid = reshape(test_u, (2*nθ, nθ, :))
+pred_v_grid = reshape(prediction_v, (2*nθ, nθ, :))
+test_v_grid = reshape(test_v, (2*nθ, nθ, :))
+
+# Plot the first timestep prediction & ground truth for quick peek
+Lat_Lon_Pcolormesh(mesh, pred_u_grid,  1, "./train/plots/baseESN_barotropic_pred_u.png")
+Lat_Lon_Pcolormesh(mesh, test_u_grid, 1, "./train/plots/baseESN_barotropic_test_u.png")
+Lat_Lon_Pcolormesh(mesh, pred_v_grid,  1, "./train/plots/baseESN_barotropic_pred_v.png")
+Lat_Lon_Pcolormesh(mesh, test_v_grid, 1, "./train/plots/baseESN_barotropic_test_v.png")
+
+println("Completed!")
