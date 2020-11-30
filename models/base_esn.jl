@@ -33,7 +33,7 @@ module BaseESN
     )
   end
 
-  function train(esn; beta=0.0)
+  function train(esn; beta=default_params.beta)
     """Returns a trained readout layer using ridge regression."""
     W_out = ESNtrain(esn, beta)
   end
