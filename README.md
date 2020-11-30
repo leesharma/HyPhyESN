@@ -2,6 +2,11 @@
 
 Class project for CMSC 727
 
+* [Getting Started](#getting-started)
+* [Model Selection](#model-selection)
+* [Evaluation](#evaluation)
+* [Climate Forecast Models](#climate-forecast-models)
+
 ## Getting Started
 
 ### Project Dependencies
@@ -61,6 +66,35 @@ You should be able to run this script without errors:
 ```bash
 % julia main.jl
 ```
+
+This introduces several metrics and plots for analysis and comparison:
+
+## Model Selection
+
+There are several utilities for parameter searches and model selection:
+
+- `ModelSelection.random_search(train, test, Dict(:key=>[values], :key=>[values], n_samples=20, n_trials=50)` - performs a random parameter search over the given ranges, testing `n_samples` different parameter sets with statistics taken over `n_trials` trials each. Prints results to stdout.
+- `ModelSelection.grid_search(train, test, Dict(:key=>[values], :key=>[values], n_trials=50)` - performs a grid search over the given ranges, testing each parameter combination `n_trials` times. Prints results to stdout.
+
+## Evaluation
+
+### Metrics
+
+- `Metrics.root_mean_squared_errors` - returns the RMSE of each state component.
+- `Metrics.normalized_error` - returns the normalized error, as given by Doan, 2019. Returns a scalar.
+- `Metrics.time_horizon` - returns the time over which the function remains within specified error bounds
+
+### Plots
+
+- `Metrics.plot_predictions` - plots numerical solution (blue) versus ESN predictions (red) for each state component.
+    
+    ![sample_lorenz_predictions](https://github.com/leesharma/HyPhyESN/blob/main/data/data_plots/sample_lorenz_predictions.png)
+    - `Metrics.plot_predictions_animated` - creates an animated gif of the above graph
+- `Metrics.plot_error` - plots the specified error (default: normalized_error) over the specified timescale
+    ![sample_lorenz_error](https://github.com/leesharma/HyPhyESN/blob/main/data/data_plots/sample_lorenz_error.png)
+- `Metrics.plot_avg_error` - plots the time-averaged error (default: normalized_error) over the specified timescale. Not as sharp as the instantaneous error, but it smooths out some of the oscillations.
+    ![sample_lorenz_time_avg_error](https://github.com/leesharma/HyPhyESN/blob/main/data/data_plots/sample_lorenz_time_avg_error.png)
+
 ## Climate Forecast Models
 
 The `./data` directory contains three variants of simplified climate forecast models with varying degrees of complexity.
