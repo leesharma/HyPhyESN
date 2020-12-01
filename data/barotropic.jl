@@ -99,12 +99,12 @@ module BarotropicData
               Barotropic_Dynamics!(mesh, atmo_data, dyn_data, integrator)
               time += Δt
               @info time
-              # Store U, V each iter. NOTE: Not needed here, barotropic only solves at nd=1
+              # Store U, V each iter.
               temporal_grid_u[:,:,:,i] = dyn_data.grid_u_c
               temporal_grid_v[:,:,:,i] = dyn_data.grid_v_c
 
           end
-          return temporal_grid_u, temporal_grid_v, mesh
+          return temporal_grid_u, temporal_grid_v, mesh, atmo_data, dyn_data
           Lat_Lon_Pcolormesh(mesh, grid_u,  1, "./data/data_plots/Barotropic_vel_u.png")
           Lat_Lon_Pcolormesh(mesh, grid_vor, 1, "./data/data_plots/Barotropic_vor.png")
     end
@@ -116,19 +116,21 @@ module BarotropicData
         #-- Takes a dataset & training params as input, outputs training/test sets for ESN
         # Load data
         mesh = load(dataset_filepath)["mesh"]
+        atmo_data = load(dataset_filepath)["atmo_data"]
+        dyn_data = load(dataset_filepath)["dyn_data"]
         temporal_grid_u = load(dataset_filepath)["temporal_grid_u"]
         temporal_grid_v = load(dataset_filepath)["temporal_grid_v"]
 
         # Grab first vertical component (others aren't solved), flatten the remaining spatial components
         # Leaves us a 2D array of spatial solutions & time step
-        data_u = reshape(temporal_grid_u[:,:,1,:], (:,size(temporal_grid_u)[4]))
-        data_v = reshape(temporal_grid_v[:,:,1,:], (:,size(temporal_grid_v)[4]))
+        data_u = reshape(temporal_grid_u[:,:,:,:], (:,size(temporal_grid_u)[4]))
+        data_v = reshape(temporal_grid_v[:,:,:,:], (:,size(temporal_grid_v)[4]))
         train_u = data_u[:, shift:shift+train_len-1]
         train_v = data_v[:, shift:shift+train_len-1]
         test_u = data_u[:, shift+train_len:shift+train_len+predict_len-1]
         test_v = data_v[:, shift+train_len:shift+train_len+predict_len-1]
 
-        return train_u, test_u, train_v, test_v, mesh
+        return train_u, test_u, train_v, test_v, mesh, atmo_data, dyn_data
 
     end
 
@@ -137,13 +139,13 @@ module BarotropicData
 
         ###############################################################################
         # Name of dataset folder to save
-        file_name = "barotropic_T21_8day.jld"
+        file_name = "barotropic_T21_2D_8day.jld"
 
         # Data generation parameters
         # T21 grid
         num_fourier = 21  # Fourier wave number truncation
         nθ = 32  # Latitudinal grid size
-        nd = 20  # Vertical slices, doesn't actually matter here, it just solves nd = 1
+        nd = 1   # Vertical slices, doesn't actually matter here, it just solves nd = 1
 
         # T42 grid
         #num_fourier = 42
@@ -161,10 +163,11 @@ module BarotropicData
         ###############################################################################
 
         # Run the barotropic model, store u & v data
-        temporal_grid_u, temporal_grid_v, mesh = Barotropic_Main(num_fourier, nθ, nd, start_time, end_time, Δt)
+        temporal_grid_u, temporal_grid_v, mesh, atmo_data, dyn_data = Barotropic_Main(num_fourier, nθ, nd, start_time, end_time, Δt)
 
         save("./data/datasets/$file_name","end_time",end_time,"Δt",Δt,"mesh",mesh,
-             "temporal_grid_u",temporal_grid_u,"temporal_grid_v",temporal_grid_v, compress = true)
+             "temporal_grid_u",temporal_grid_u,"temporal_grid_v",temporal_grid_v,
+             "atmo_data",atmo_data,"dyn_data",dyn_data,compress = true)
         println("Data saved.")
 
     end

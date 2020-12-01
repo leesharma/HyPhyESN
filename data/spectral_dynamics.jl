@@ -44,7 +44,7 @@ module SpectralData
       day_to_sec = 86400
       start_time = 0
       end_time = end_day*day_to_sec  #
-      Δt = 1200
+      Δt = 1200  # NOTE: Must change this in train_test() and baseESN if you change here
       init_step = true
 
       integrator = Filtered_Leapfrog(robert_coef,
@@ -108,7 +108,7 @@ module SpectralData
 
       end
 
-      return op_man, mesh, temporal_grid_u, temporal_grid_v, temporal_grid_P, temporal_grid_T
+      return op_man, mesh, temporal_grid_u, temporal_grid_v, temporal_grid_P, temporal_grid_T, atmo_data, dyn_data, vert_coord
 
     end
 
@@ -133,12 +133,11 @@ module SpectralData
         train_len = floor(Int64, (train_len*day_to_sec)/Δt)
         predict_len = floor(Int64, (predict_len*day_to_sec)/Δt)
 
-        # Grab first vertical component (others aren't solved), flatten the remaining spatial components
-        # Leaves us a 2D array of spatial solutions & time step
-        data_u = reshape(temporal_grid_u[:,:,1,:], (:,size(temporal_grid_u)[4]))
-        data_v = reshape(temporal_grid_v[:,:,1,:], (:,size(temporal_grid_v)[4]))
-        data_P = reshape(temporal_grid_P[:,:,1,:], (:,size(temporal_grid_P)[4]))
-        data_T = reshape(temporal_grid_T[:,:,1,:], (:,size(temporal_grid_T)[4]))
+        # flatten the spatial components. Leaves us a 2D array of spatial solutions & time step
+        data_u = reshape(temporal_grid_u[:,:,:,:], (:,size(temporal_grid_u)[4]))
+        data_v = reshape(temporal_grid_v[:,:,:,:], (:,size(temporal_grid_v)[4]))
+        data_P = reshape(temporal_grid_P[:,:,:,:], (:,size(temporal_grid_P)[4]))
+        data_T = reshape(temporal_grid_T[:,:,:,:], (:,size(temporal_grid_T)[4]))
         train_u = data_u[:, shift:shift+train_len-1]
         train_v = data_v[:, shift:shift+train_len-1]
         train_P = data_P[:, shift:shift+train_len-1]
@@ -156,13 +155,13 @@ module SpectralData
 
         ###############################################################################
         # Name of dataset folder to save
-        file_name = "spectral_T21_600day_200spinup.jld"
+        file_name = "spectral_T21_nd3_500day_100spinup.jld"
 
         # Data generation parameters
         # T21 grid
         num_fourier = 21  # Fourier wave number truncation
         nθ = 32  # Latitudinal grid size
-        nd = 20  # Vertical slices, doesn't actually matter here, it just solves nd = 1
+        nd = 3  # Vertical slices. 20 is default.
 
         # T42 grid
         #num_fourier = 42
@@ -174,21 +173,23 @@ module SpectralData
         #nθ = 190
         #nd = 64
 
-        end_day = 600  # Default 1200
-        spinup_day = 200  # Default 200. How long to run the solver before taking data.
+        end_day = 500  # Default 1200
+        spinup_day = 100  # Default 200. How long to run the solver before taking data.
         ################################################################################
 
         #include("HS.jl")  # For adding in parameterizations. Not needed right now.
         # Build param dict
         physics_params = Dict{String,Float64}("σ_b"=>0.7, "k_f" => 1.0, "k_a" => 1.0/40.0, "k_s" => 1.0/4.0, "ΔT_y" => 60.0, "Δθ_z" => 10.0)
         # Generate the data
-        op_man, mesh, temporal_grid_u, temporal_grid_v, temporal_grid_P, temporal_grid_T = Atmos_Spectral_Dynamics_Main(physics_params, num_fourier, nθ, nd, end_day, spinup_day)
+        op_man, mesh, temporal_grid_u, temporal_grid_v, temporal_grid_P, temporal_grid_T, atmo_data, dyn_data, vert_coord = Atmos_Spectral_Dynamics_Main(physics_params, num_fourier, nθ, nd, end_day, spinup_day)
         #Finalize_Output!(op_man, "HS_OpM.dat", "HS_mean.dat")  # To implement parameterizations
 
         # Save the data
         save("./data/datasets/$file_name","op_man",op_man,"mesh",mesh,
              "temporal_grid_u",temporal_grid_u,"temporal_grid_v",temporal_grid_v,
-             "temporal_grid_P",temporal_grid_P,"temporal_grid_T",temporal_grid_T, compress = true)
+             "temporal_grid_P",temporal_grid_P,"temporal_grid_T",temporal_grid_T,
+             "atmo_data",atmo_data,"dyn_data",dyn_data,"vert_coord",vert_coord,
+             compress = true)
         println("Data saved.")
     end
 

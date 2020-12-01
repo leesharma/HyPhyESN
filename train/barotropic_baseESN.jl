@@ -11,8 +11,8 @@ using JLD
 
 ###############################################################################
 #-- Training parameters
-dataset_filepath = "./data/datasets/barotropic_T21_8day.jld"
-save_name = "barotropic_T21_baseESN.jld"  # Name of file to save results to
+dataset_filepath = "./data/datasets/barotropic_T21_2D_8day.jld"
+save_name = "barotropic_T21_2D_baseESN.jld"  # Name of file to save results to
 
 model_params = (
   approx_res_size = 5000,   # size of the reservoir; NOTE: Must be larger than all of input params.
@@ -37,12 +37,13 @@ shift = floor(Int64, (end_time/Δt)/4)
 ###############################################################################
 
 
-# Generate the data
+# Load the data
 train_u, test_u, train_v, test_v, mesh = BarotropicData.train_test(dataset_filepath,
                                                                    train_len = train_len,
                                                                    predict_len = predict_len,
                                                                    shift = shift)
 nθ = mesh.nθ
+nd = mesh.nd
 
 train_data = cat(train_u, train_v, dims=1)
 
@@ -65,9 +66,9 @@ save("./train/results/$save_name","model_params",model_params,"pred_u_grid",pred
 println("Results saved. ...")
 
 # Plot the first timestep prediction & ground truth for quick peek
-Lat_Lon_Pcolormesh(mesh, pred_u_grid,  1, "./train/plots/baseESN_barotropic_pred_u.png")
-Lat_Lon_Pcolormesh(mesh, test_u_grid, 1, "./train/plots/baseESN_barotropic_test_u.png")
-Lat_Lon_Pcolormesh(mesh, pred_v_grid,  1, "./train/plots/baseESN_barotropic_pred_v.png")
-Lat_Lon_Pcolormesh(mesh, test_v_grid, 1, "./train/plots/baseESN_barotropic_test_v.png")
+Lat_Lon_Pcolormesh(mesh, pred_u_grid,  1, "./train/plots/baseESN_barotropic_2D_pred_u.png")
+Lat_Lon_Pcolormesh(mesh, test_u_grid, 1, "./train/plots/baseESN_barotropic_2D_test_u.png")
+Lat_Lon_Pcolormesh(mesh, pred_v_grid,  1, "./train/plots/baseESN_barotropic_2D_pred_v.png")
+Lat_Lon_Pcolormesh(mesh, test_v_grid, 1, "./train/plots/baseESN_barotropic_2D_test_v.png")
 
 println("Completed!")
