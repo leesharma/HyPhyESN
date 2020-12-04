@@ -25,6 +25,13 @@ module LorenzData
     data = Matrix(hcat(v...))
   end
 
+  function reduced_lorenz_step(u0=u0_default, ϵᵦ=0.05; p_base=p_default, dt=0.02, solver=ABM54())
+    p_rom = p_base .* [1., 1., 1+ϵᵦ]
+    reduced_lorenz_step_single(u) = lorenz_solution(u, (0.0, dt), p=p_rom, dt=dt, solver=solver)[:,end]
+
+    hcat(map(reduced_lorenz_step_single, eachcol(u0))...)
+  end
+
   # public interface
 
   function train_test(; train_len=5000, predict_len=1250, shift=300,      # split config

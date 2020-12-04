@@ -5,6 +5,20 @@ module BaseESN
 
   include("../models/train_ridge.jl")
   using .TrainRidge: train_default, train_closedform, train_mlj, train_optim
+  include("../models/train_hybrid.jl")
+  using .TrainHybrid: train_closedform_hybrid, train_mlj_hybrid, train_optim_hybrid
+
+  training_strategies = Dict(
+    # base
+    :default            => train_default,
+    :closedform         => train_closedform,
+    :mlj                => train_mlj,
+    :optim              => train_optim,
+    # hybrid
+    :closedform_hybrid  => train_closedform_hybrid,
+    :mlj_hybrid         => train_mlj_hybrid,
+    :optim_hybrid       => train_optim_hybrid,
+  )
 
   # default model parameters
   default_params = (
@@ -60,24 +74,18 @@ module BaseESN
       * :closedform - uses a closed-form ridge regression with regularization
       * :mlj - uses MLJLinearModels.jl to solve a ridge regression iteratively
       * :optim - uses Optim.jl (BGFS by default) to solve a ridge regression
+      * :*_hybrid - uses the above approaches with a hybrid ROM model
     """
     strategy=Symbol(strategy)
-
-    if strategy==:default
-      return train_default
-    elseif strategy==:closedform
-      return train_closedform
-    elseif strategy==:mlj
-      return train_mlj
-    elseif strategy==:optim
-      return train_optim
-    else
-      error("Unknown training strategy $(strategy)")
-    end
+    return training_strategies[strategy]
   end
 
   function predict(esn, predict_len, W_out)
     """Predict output sequence of predict_len using the given ESN and W_out."""
     output = ESNpredict(esn, predict_len, W_out)
+  end
+
+  function predict_hybrid(esn, predict_len, W_out; ϵᵦ=0.05)
+
   end
 end

@@ -58,15 +58,15 @@ function main()
   n_trials = 50
   strategy = "closedform"    # select from [:default, :closedform, :mlj, :optim]
   opts = (
-    approx_res_size = 500,   # size of the reservoir
-    radius = 1.0,            # desired spectral radius
+    approx_res_size = 200,   # size of the reservoir
+    radius = 0.4,            # desired spectral radius
     activation = tanh,       # neuron activation function
     degree = 3,              # degree of connectivity of the reservoir
-    sigma = 0.1,             # input weight scaling
-    beta = 0.0001,           # ridge
-    alpha = 1.0,             # leaky coefficient
+    sigma = 0.15,             # input weight scaling
+    beta = 1e-6,           # ridge
+    alpha = 0.7,             # leaky coefficient
     nla_type = NLAT2(),      # non linear algorithm for the states
-    extended_states = false, # if true extends the states with the input
+    extended_states = true, # if true extends the states with the input
   )
   #
   #
