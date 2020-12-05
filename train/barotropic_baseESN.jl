@@ -12,15 +12,15 @@ using JLD
 ###############################################################################
 #-- Training parameters
 dataset_filepath = "./data/datasets/barotropic_T21_2D_8day.jld"
-save_name = "barotropic_T21_2D_baseESN.jld"  # Name of file to save results to
+save_name = "barotropic_T21_2D_baseESN_20Kres_MOD1.jld"  # Name of file to save results to
 
 model_params = (
-  approx_res_size = 5000,   # size of the reservoir; NOTE: Must be larger than all of input params.
-  radius = 1.0,              # desired spectral radius
+  approx_res_size = 20000,   # size of the reservoir; NOTE: Must be larger than all of input params.
+  radius = 0.4,              # desired spectral radius
   activation = tanh,         # neuron activation function
   degree = 3,                # degree of connectivity of the reservoir
-  sigma = 0.1,               # input weight scaling
-  beta = 0.0001,             # ridge
+  sigma = 0.15,               # input weight scaling
+  beta = 0.000001,             # ridge
   alpha = 1.0,               # leaky coefficient
   nla_type = NLAT2(),        # non linear algorithm for the states
   extended_states = false,   # if true extends the states with the input
@@ -60,15 +60,29 @@ test_u_grid = reshape(test_u, (2*nθ, nθ, :))
 pred_v_grid = reshape(prediction_v, (2*nθ, nθ, :))
 test_v_grid = reshape(test_v, (2*nθ, nθ, :))
 
+# Modify param list for save compatibility (can't save directly with JLD)
+save_model_params = (
+  approx_res_size = model_params.approx_res_size,
+  radius = model_params.radius,
+  activation = String(Symbol(model_params.activation)),
+  degree = model_params.degree,
+  sigma = model_params.sigma,
+  beta = model_params.beta,
+  alpha = model_params.alpha,
+  nla_type = String(Symbol(model_params.nla_type)),
+  extended_states = model_params.extended_states,
+)
+
 # Save the results
-save("./train/results/$save_name","model_params",model_params,"pred_u_grid",pred_u_grid,
-     "test_u_grid",test_u_grid,"pred_v_grid",pred_v_grid,"test_v_grid",test_v_grid, compress = true)
+save("./train/results/$save_name","model_params",save_model_params,"pred_u_grid",pred_u_grid,
+     "test_u_grid",test_u_grid,"pred_v_grid",pred_v_grid,"test_v_grid",test_v_grid,
+     "W_out",W_out,compress = true)
 println("Results saved. ...")
 
 # Plot the first timestep prediction & ground truth for quick peek
-Lat_Lon_Pcolormesh(mesh, pred_u_grid,  1, "./train/plots/baseESN_barotropic_2D_pred_u.png")
+Lat_Lon_Pcolormesh(mesh, pred_u_grid,  1, "./train/plots/baseESN_barotropic_2D_pred_u_20Kres_MOD1.png")
 Lat_Lon_Pcolormesh(mesh, test_u_grid, 1, "./train/plots/baseESN_barotropic_2D_test_u.png")
-Lat_Lon_Pcolormesh(mesh, pred_v_grid,  1, "./train/plots/baseESN_barotropic_2D_pred_v.png")
+Lat_Lon_Pcolormesh(mesh, pred_v_grid,  1, "./train/plots/baseESN_barotropic_2D_pred_v_20Kres_MOD1.png")
 Lat_Lon_Pcolormesh(mesh, test_v_grid, 1, "./train/plots/baseESN_barotropic_2D_test_v.png")
 
 println("Completed!")
