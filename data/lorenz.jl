@@ -18,9 +18,9 @@ module LorenzData
     du[3] = x*y - beta*z
   end
 
-  function lorenz_solution(u0=u0_default, tspan=tspan_default; p=p_default, dt=0.02, solver=ABM54())
+  function lorenz_solution(u0=u0_default, tspan=tspan_default, tsteps=(); p=p_default, dt=0.02, solver=ABM54())
     prob = ODEProblem(lorenz, u0, tspan, p)
-    sol = solve(prob, solver, dt=dt)
+    sol = solve(prob, solver, dt=dt, saveat=tsteps)
     v = sol.u
     data = Matrix(hcat(v...))
   end
