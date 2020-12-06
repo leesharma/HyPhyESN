@@ -8,7 +8,7 @@ module ModelSelection
 
   using Printf: @printf
   using ReservoirComputing: NLAT2
-  using Statistics: mean, std
+  using Statistics: mean, std, quantile
 
 
   function random_search(train, test, grid_params; n_samples=4, n_trials=10, E_max=0.4, dt=0.02)
@@ -29,9 +29,10 @@ module ModelSelection
                             n_trials=100 )
     """
 
+    test_len = size(test,2)
     # Runs a trial and returns the time horizon for the given options
     #   note: we could inject the metric if there are others that make sense
-    time_horizon(opts) = Metrics.time_horizon(test, BaseESN.run_trial(train,test,opts=opts), E_max=E_max, dt=dt)
+    time_horizon(opts) = Metrics.time_horizon(test, BaseESN.run_trial(train,test_len,:closedform,opts=opts), E_max=E_max, dt=dt)
     # Randomly samples from a list, falling back to the given default
     sample(key;default) = rand(get(grid_params,key,[default]))
 
@@ -67,38 +68,55 @@ module ModelSelection
     Prints out mean and standard deviation for each parameter set.
     """
 
+    test_len = size(test,2)
     # Runs a trial and returns the time horizon for the given options
     #   note: we could inject the metric if there are others that make sense
-    time_horizon(opts) = Metrics.time_horizon(test, BaseESN.run_trial(train,test,opts=opts), E_max=E_max, dt=dt)
+    time_horizon(opts) = Metrics.time_horizon(test, BaseESN.run_trial(train,test_len,:closedform,opts=opts), E_max=E_max, dt=dt)
     # Syntactic sugar for Base.get(collection, key, default)
     options(key;default) = get(grid_params,key,[default])
 
-    for approx_res_size in options(:approx_res_size, default=300)
-      for radius in options(:radius, default=1.2)
-        for activation in options(:activation, default=tanh)
-          for degree in options(:degree, default=6)
-            for sigma in options(:sigma, default=0.1)
-              for beta in options(:beta, default=0.0)
-                for alpha in options(:alpha, default=1.0)
-                  for nla_type in options(:nla_type, default=NLAT2())
-                    # build options
-                    opts = (
-                      approx_res_size = approx_res_size,  # size of the reservoir
-                      radius = radius,                    # desired spectral radius
-                      activation = activation,            # neuron activation function
-                      degree = degree,                    # degree of connectivity of the reservoir
-                      sigma = sigma,                      # input weight scaling
-                      beta = beta,                        # ridge
-                      alpha = alpha,                      # leaky coefficient
-                      nla_type = nla_type,                # non linear algorithm for the states
-                      extended_states = false,            # if true extends the states with the input
-                    )
+    means = zeros(8,6)
+    stds = zeros(8,6)
 
-                    # run trials
-                    time_horizons = [time_horizon(opts) for _ in 1:n_trials]
+    for (res_idx,approx_res_size) in enumerate(options(:approx_res_size, default=300))
+      for (rad_idx,radius) in enumerate(options(:radius, default=1.2))
+        for (activation_idx,activation) in enumerate(options(:activation, default=tanh))
+          for (deg_idx,degree) in enumerate(options(:degree, default=6))
+            for (sigma_idx,sigma) in enumerate(options(:sigma, default=0.1))
+              for (beta_idx,beta) in enumerate(options(:beta, default=0.0001))
+                for (alpha_idx,alpha) in enumerate(options(:alpha, default=1.0))
+                  for (nla_idx,nla_type) in enumerate(options(:nla_type, default=NLAT2()))
+                    for (es_idx,extended_states) in enumerate(options(:extended_states, default=false))
+                      # build options
+                      opts = (
+                        approx_res_size = approx_res_size,  # size of the reservoir
+                        radius = radius,                    # desired spectral radius
+                        activation = activation,            # neuron activation function
+                        degree = degree,                    # degree of connectivity of the reservoir
+                        sigma = sigma,                      # input weight scaling
+                        beta = beta,                        # ridge
+                        alpha = alpha,                      # leaky coefficient
+                        nla_type = nla_type,                # non linear algorithm for the states
+                        extended_states = extended_states,  # if true extends the states with the input
+                      )
 
-                    # print results
-                    _print_results(opts, time_horizons, n_trials)
+                      # run trials
+                      try
+                        time_horizons = [time_horizon(opts) for _ in 1:n_trials]
+                        means[rad_idx,alpha_idx] = mean(time_horizons)
+                        stds[rad_idx,alpha_idx] = std(time_horizons)
+                        _print_results(opts, time_horizons, n_trials)
+                      catch err
+                        display(err)
+                        means[rad_idx,alpha_idx] = NaN
+                        stds[rad_idx,alpha_idx] = NaN
+                        display(opt)
+                        display(NaN)
+                      end
+
+                      # print results
+                      # _print_results(opts, time_horizons, n_trials)
+                    end
                   end
                 end
               end
@@ -107,6 +125,7 @@ module ModelSelection
         end
       end
     end
+    means,stds
   end
 
   function _print_results(opts, results, n_trials; metric_name="time horizon")
@@ -120,3 +139,10 @@ module ModelSelection
   end
 
 end # ModelSelection
+
+
+# dt = 0.02
+# train_len = 3000
+# test_len = 750    # ~14 Lyapunov times
+# E_max = 0.4       # error threshold for time horizon
+# train, test = LorenzData.train_test(train_len=train_len, predict_len=test_len, dt=dt)
