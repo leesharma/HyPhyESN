@@ -7,21 +7,22 @@ using .BaseESN
 using ReservoirComputing: ESN, ESNtrain, ESNpredict, NLAT2
 using JGCM
 using JLD
+using Statistics
 
 
 ###############################################################################
 #-- Training parameters
 dataset_filepath = "./data/datasets/barotropic_T21_2D_8day.jld"
-save_name = "barotropic_T21_2D_baseESN_20Kres_MOD1.jld"  # Name of file to save results to
+save_name = "barotropic_T21_2D_baseESN_5Kres_MOD2_norm.jld"  # Name of file to save results to
 
 model_params = (
-  approx_res_size = 20000,   # size of the reservoir; NOTE: Must be larger than all of input params.
-  radius = 0.4,              # desired spectral radius
+  approx_res_size = 5000,   # size of the reservoir; NOTE: Must be larger than all of input params.
+  radius = 1.0,              # desired spectral radius
   activation = tanh,         # neuron activation function
   degree = 3,                # degree of connectivity of the reservoir
-  sigma = 0.15,               # input weight scaling
-  beta = 0.000001,             # ridge
-  alpha = 1.0,               # leaky coefficient
+  sigma = 0.1,               # input weight scaling
+  beta = 0.0001,             # ridge
+  alpha = 0.6,               # leaky coefficient
   nla_type = NLAT2(),        # non linear algorithm for the states
   extended_states = false,   # if true extends the states with the input
 )
@@ -45,6 +46,15 @@ train_u, test_u, train_v, test_v, mesh = BarotropicData.train_test(dataset_filep
 nθ = mesh.nθ
 nd = mesh.nd
 
+u_mean = mean(train_u)
+u_std = std(train_u)
+v_mean = mean(train_v)
+v_std = std(train_v)
+
+#Standardize the input data
+train_u = (train_u.-u_mean)./u_std
+train_v = (train_v.-v_mean)./v_std
+
 train_data = cat(train_u, train_v, dims=1)
 
 # Initialize ESN, then train, & predict
@@ -59,6 +69,10 @@ pred_u_grid = reshape(prediction_u, (2*nθ, nθ, :))
 test_u_grid = reshape(test_u, (2*nθ, nθ, :))
 pred_v_grid = reshape(prediction_v, (2*nθ, nθ, :))
 test_v_grid = reshape(test_v, (2*nθ, nθ, :))
+
+# Undo standardization to compare results
+pred_u_grid = (pred_u_grid.*u_std).+u_mean
+pred_v_grid = (pred_v_grid.*v_std).+v_mean
 
 # Modify param list for save compatibility (can't save directly with JLD)
 save_model_params = (
@@ -80,9 +94,9 @@ save("./train/results/$save_name","model_params",save_model_params,"pred_u_grid"
 println("Results saved. ...")
 
 # Plot the first timestep prediction & ground truth for quick peek
-Lat_Lon_Pcolormesh(mesh, pred_u_grid,  1, "./train/plots/baseESN_barotropic_2D_pred_u_20Kres_MOD1.png")
-Lat_Lon_Pcolormesh(mesh, test_u_grid, 1, "./train/plots/baseESN_barotropic_2D_test_u.png")
-Lat_Lon_Pcolormesh(mesh, pred_v_grid,  1, "./train/plots/baseESN_barotropic_2D_pred_v_20Kres_MOD1.png")
-Lat_Lon_Pcolormesh(mesh, test_v_grid, 1, "./train/plots/baseESN_barotropic_2D_test_v.png")
+# Lat_Lon_Pcolormesh(mesh, pred_u_grid,  1, "./train/plots/baseESN_barotropic_2D_pred_u_20Kres_MOD1.png")
+# Lat_Lon_Pcolormesh(mesh, test_u_grid, 1, "./train/plots/baseESN_barotropic_2D_test_u.png")
+# Lat_Lon_Pcolormesh(mesh, pred_v_grid,  1, "./train/plots/baseESN_barotropic_2D_pred_v_20Kres_MOD1.png")
+# Lat_Lon_Pcolormesh(mesh, test_v_grid, 1, "./train/plots/baseESN_barotropic_2D_test_v.png")
 
 println("Completed!")

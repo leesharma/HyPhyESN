@@ -181,7 +181,7 @@ module SpectralData
         # Build param dict
         physics_params = Dict{String,Float64}("σ_b"=>0.7, "k_f" => 1.0, "k_a" => 1.0/40.0, "k_s" => 1.0/4.0, "ΔT_y" => 60.0, "Δθ_z" => 10.0)
         # Generate the data
-        op_man, mesh, temporal_grid_u, temporal_grid_v, temporal_grid_P, temporal_grid_T, atmo_data, dyn_data, vert_coord = Atmos_Spectral_Dynamics_Main(physics_params, num_fourier, nθ, nd, end_day, spinup_day)
+        op_man, mesh, temporal_grid_u, temporal_grid_v, temporal_grid_P, temporal_grid_T, atmo_data, dyn_data, vert_coord = @time Atmos_Spectral_Dynamics_Main(physics_params, num_fourier, nθ, nd, end_day, spinup_day)
         #Finalize_Output!(op_man, "HS_OpM.dat", "HS_mean.dat")  # To implement parameterizations
 
         # Save the data

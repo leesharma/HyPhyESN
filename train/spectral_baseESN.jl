@@ -7,20 +7,21 @@ using .BaseESN
 using ReservoirComputing: ESN, ESNtrain, ESNpredict, NLAT2
 using JGCM
 using JLD
+using Statistics
 
 ###############################################################################
 #-- Training parameters
 dataset_filepath = "./data/datasets/spectral_T21_nd3_500day_100spinup.jld"
-save_name = "spectral_T21_nd3_baseESN_res25K_MOD1.jld"  # Name of file to save results to
+save_name = "spectral_T21_nd3_baseESN_res25K_MOD2_norm.jld"  # Name of file to save results to
 
 model_params = (
   approx_res_size = 25000,   # size of the reservoir; NOTE: Must be larger than all of input params.
-  radius = 0.4,              # desired spectral radius
+  radius = 1.0,              # desired spectral radius
   activation = tanh,         # neuron activation function
   degree = 3,                # degree of connectivity of the reservoir
-  sigma = 0.15,               # input weight scaling
-  beta = 0.000001,             # ridge
-  alpha = 1.0,               # leaky coefficient
+  sigma = 0.1,               # input weight scaling
+  beta = 0.0001,             # ridge
+  alpha = 0.6,               # leaky coefficient
   nla_type = NLAT2(),        # non linear algorithm for the states
   extended_states = false,   # if true extends the states with the input
 )
@@ -44,6 +45,22 @@ predict_len = ceil(Int64, (end_day-spinup_day)*(1/4))
 # Load the data
 op_man, train_u, train_v, train_P, train_T, test_u, test_v, test_P, test_T = SpectralData.train_test(dataset_filepath, train_len, predict_len)
 println("Data loaded. ...")
+
+u_mean = mean(train_u)
+u_std = std(train_u)
+v_mean = mean(train_v)
+v_std = std(train_v)
+P_mean = mean(train_P)
+P_std = std(train_P)
+T_mean = mean(train_T)
+T_std = std(train_T)
+
+#Standardize the input data
+train_u = (train_u.-u_mean)./u_std
+train_v = (train_v.-v_mean)./v_std
+train_P = (train_P.-P_mean)./P_std
+train_T = (train_T.-T_mean)./T_std
+
 # Combine training data.
 # NOTE: Moved P to the end of this flattened array for easier indexing. Only has one vertical dimension.
 train_data = cat(train_u, train_v, train_T, train_P, dims=1)
@@ -51,14 +68,14 @@ nθ = mesh.nθ
 nd = mesh.nd
 
 # Initialize ESN, then train, & predict
-esn = BaseESN.esn_init(train_data, opts=model_params)
+esn = @time BaseESN.esn_init(train_data, opts=model_params)
 println("ESN initialized. ...")
-W_out = BaseESN.train(esn, beta=model_params.beta)
+W_out = @time BaseESN.train(esn, beta=model_params.beta)
 println("ESN trained. ...")
 
 # Convert predict_len to timesteps for .predict()
 predict_len = floor(Int64, (predict_len*day_to_sec)/Δt)
-prediction = BaseESN.predict(esn, predict_len, W_out)
+prediction = @time BaseESN.predict(esn, predict_len, W_out)
 println("Predictions completed. ...")
 
 # Separate u, v, P, T from prediction array, reshape them to grid shape
@@ -75,6 +92,12 @@ pred_P_grid = reshape(prediction_P, (2*nθ, nθ, 1, :))
 test_P_grid = reshape(test_P, (2*nθ, nθ, 1, :))
 pred_T_grid = reshape(prediction_T, (2*nθ, nθ, nd, :))
 test_T_grid = reshape(test_T, (2*nθ, nθ, nd, :))
+
+# Undo standardization to compare results
+pred_u_grid = (pred_u_grid.*u_std).+u_mean
+pred_v_grid = (pred_v_grid.*v_std).+v_mean
+pred_P_grid = (pred_P_grid.*P_std).+P_mean
+pred_T_grid = (pred_T_grid.*T_std).+T_mean
 
 # Modify param list for save compatibility (can't save directly with JLD)
 save_model_params = (
@@ -97,17 +120,17 @@ save("./train/results/$save_name","model_params",save_model_params,"pred_u_grid"
 println("Results saved. ...")
 
 # Plot the prediction & ground truth for quick peek
-time_step = 1 # Time step to plot
-height = 1 # Set the height layer to plot
-Lat_Lon_Pcolormesh(mesh, pred_u_grid[:,:,:,time_step],  height, "./train/plots/baseESN_spectral_nd3_pred_u_35Kres.png")
-Lat_Lon_Pcolormesh(mesh, test_u_grid[:,:,:,time_step], height, "./train/plots/baseESN_spectral_nd3_test_u.png")
-Lat_Lon_Pcolormesh(mesh, pred_v_grid[:,:,:,time_step],  height, "./train/plots/baseESN_spectral_nd3_pred_v_35Kres.png")
-Lat_Lon_Pcolormesh(mesh, test_v_grid[:,:,:,time_step], height, "./train/plots/baseESN_spectral_nd3_test_v.png")
-Lat_Lon_Pcolormesh(mesh, pred_P_grid[:,:,:,time_step],  height, "./train/plots/baseESN_spectral_nd3_pred_P_35Kres.png")
-Lat_Lon_Pcolormesh(mesh, test_P_grid[:,:,:,time_step], height, "./train/plots/baseESN_spectral_nd3_test_P.png")
-Lat_Lon_Pcolormesh(mesh, pred_T_grid[:,:,:,time_step],  height, "./train/plots/baseESN_spectral_nd3_pred_T_35Kres.png")
-Lat_Lon_Pcolormesh(mesh, test_T_grid[:,:,:,time_step], height, "./train/plots/baseESN_spectral_nd3_test_T.png")
-println("Results plotted. ...")
+# time_step = 1 # Time step to plot
+# height = 1 # Set the height layer to plot
+# Lat_Lon_Pcolormesh(mesh, pred_u_grid[:,:,:,time_step],  height, "./train/plots/baseESN_spectral_nd3_pred_u_35Kres.png")
+# Lat_Lon_Pcolormesh(mesh, test_u_grid[:,:,:,time_step], height, "./train/plots/baseESN_spectral_nd3_test_u.png")
+# Lat_Lon_Pcolormesh(mesh, pred_v_grid[:,:,:,time_step],  height, "./train/plots/baseESN_spectral_nd3_pred_v_35Kres.png")
+# Lat_Lon_Pcolormesh(mesh, test_v_grid[:,:,:,time_step], height, "./train/plots/baseESN_spectral_nd3_test_v.png")
+# Lat_Lon_Pcolormesh(mesh, pred_P_grid[:,:,:,time_step],  height, "./train/plots/baseESN_spectral_nd3_pred_P_35Kres.png")
+# Lat_Lon_Pcolormesh(mesh, test_P_grid[:,:,:,time_step], height, "./train/plots/baseESN_spectral_nd3_test_P.png")
+# Lat_Lon_Pcolormesh(mesh, pred_T_grid[:,:,:,time_step],  height, "./train/plots/baseESN_spectral_nd3_pred_T_35Kres.png")
+# Lat_Lon_Pcolormesh(mesh, test_T_grid[:,:,:,time_step], height, "./train/plots/baseESN_spectral_nd3_test_T.png")
+# println("Results plotted. ...")
 
 # Countour plot if desired, not currently setup correctly.
 #Sigma_Zonal_Mean_Contourf(op_man, "./data/data_plots/spectral_dynamics_contourf")
