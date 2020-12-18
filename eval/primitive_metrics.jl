@@ -200,10 +200,10 @@ module PrimitivesMetrics
     n = size(u_error,1)
     #x = range(1, dt*n, length=n)  # scale by largest Lyapunov exponent
 
-    plt = plot!(title="Barotropic System Prediction Error", legend=:topleft)
-    plot!(u_error, label="Eastward Velocity")
-    plot!(v_error, label="Northward Velocity")
-    plot!(repeat([E_max],n), label="Max error target", linestyle=:dot)
+    plt = Plots.plot(title="Barotropic System Prediction Error", legend=:topleft)
+    plot!(plt, u_error, label="Eastward Velocity")
+    plot!(plt, v_error, label="Northward Velocity")
+    plot!(plt, repeat([E_max],n), label="Max error target", linestyle=:dot)
     ylabel!(plt, "Normalized Error")
     xlabel!(plt, "Time Steps (1 step = 30 minutes)")
     Plots.savefig(save_file_name)
@@ -213,12 +213,12 @@ module PrimitivesMetrics
     n = size(u_error,1)
     #x = range(1, dt*n, length=n)  # scale by largest Lyapunov exponent
 
-    plt = plot!(title="Spectral Dynamical Core Prediction Error", legend=:topleft)
-    plot!(u_error, label="Eastward Velocity")
-    plot!(v_error, label="Northward Velocity")
-    plot!(P_error, label="Surface Pressure")
-    plot!(T_error, label="Temperature")
-    plot!(repeat([E_max],n), label="Max error target", linestyle=:dot)
+    plt = Plots.plot(title="Spectral Dynamical Core Prediction Error", legend=:topleft)
+    plot!(plt, u_error, label="Eastward Velocity")
+    plot!(plt, v_error, label="Northward Velocity")
+    plot!(plt, P_error, label="Surface Pressure")
+    plot!(plt, T_error, label="Temperature")
+    plot!(plt, repeat([E_max],n), label="Max error target", linestyle=:dot)
     ylabel!(plt, "Normalized Error")
     xlabel!(plt, "Time Steps (1 step = 20 minutes)")
 
