@@ -1,0 +1,5 @@
+[deps]
+MLJLinearModels = "6ee0df7b-362f-4a72-a706-9e79364fb692"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+ParameterizedFunctions = "65888b18-ceab-5e60-b2b9-181511a3b968"
+ReservoirComputing = "7c2d2b1e-3dd4-11ea-355a-8f6a8116e294"

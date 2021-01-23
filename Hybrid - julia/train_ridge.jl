@@ -1,0 +1,90 @@
+module TrainRidge
+
+  export train
+
+  using ReservoirComputing: ESNtrain, nla
+  using LinearAlgebra: I, cond
+  using Optim
+  using MLJLinearModels
+
+
+  # public interface
+
+  function train_strategy(strategy=:default)
+    """
+      train_strategy(:optim)
+
+    Returns an ESN training function. Wrapper for selecting training function
+    by key, just to keep things neat.
+
+    Current options:
+      * :default - uses ReservoirComputing.jl's default solver
+      * :closedform - uses a closed-form ridge regression with regularization
+      * :mlj - uses MLJLinearModels.jl to solve a ridge regression iteratively
+      * :optim - uses Optim.jl (BGFS by default) to solve a ridge regression
+    """
+    if strategy==:default
+      return train_default
+    elseif strategy==:closedform
+      return train_closedform
+    elseif strategy==:mlj
+      return train_mlj
+    elseif strategy==:optim
+      return train_optim
+    else
+      error("Unknown training strategy $(strategy)")
+    end
+  end
+
+
+  ### internal implementation ###
+
+  function train_default(esn; beta=0.0)
+    """Trains ESN using built-in ESNTrain function."""
+    W_out = ESNtrain(esn, beta)
+  end
+
+  function train_closedform(esn; beta=0.0)
+    """Trains ESN using closed-form ridge regression."""
+    X = nla(esn.nla_type, esn.states) # reservoir output
+    Y = esn.train_data                # groundtruth
+
+    W_out = Y*X'*inv(X*X' + beta*I)   # analytical ridge regression
+  end
+
+  function train_mlj(esn; beta=0.0)
+    """Trains ESN using ridge regression with MLJ Linear Solver."""
+    X = nla(esn.nla_type, esn.states) # reservoir output
+    Y = esn.train_data                # groundtruth
+
+    W_out = zeros(Float64,size(Y,1),size(X,1))
+
+    solver = MLJLinearModels.Analytical(iterative=true)
+    loss = MLJLinearModels.RidgeRegression(lambda=beta, fit_intercept=false)
+
+    for i=1:size(Y,1)
+      W_out[i,:] = MLJLinearModels.fit(loss, X', Y[i,:], solver=MLJLinearModels.Analytical())
+    end
+    W_out
+  end
+
+  function train_optim(esn; beta=0.0, opt=BFGS(), maxiters=1000)
+    """Trains ESN using ridge regression with Optim.jl nonlinear optimizer."""
+
+    X = nla(esn.nla_type, esn.states) # reservoir output
+    Y = esn.train_data                # groundtruth
+    W_out = zeros(size(Y,1),size(X,1))
+
+    # loss function and analytical derivative (much faster than autodiff!)
+    ridge(W) = 1/2*sum((W*X-Y).^2) + 1/2*beta*sum(W.^2)
+    ridge_g!(∇,W) = (∇[:,:] = (W*X-Y)*X' + beta*W)
+    ridge_h!(∇²,_) = (∇²[:,:] = X*X' + beta*I)
+
+    results = optimize(ridge, ridge_g!, ridge_h!, W_out, opt,
+                       Optim.Options(iterations=maxiters),
+                       autodiff=:forward)
+
+    W_out = Optim.minimizer(results)
+  end
+
+end # module TrainRidge
