@@ -1,3 +1,5 @@
+using Pkg; Pkg.activate("."); Pkg.instantiate()
+
 using JLD
 using JGCM
 using ReservoirComputing

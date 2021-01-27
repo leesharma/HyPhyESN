@@ -1,3 +1,5 @@
+using Pkg; Pkg.activate("."); Pkg.instantiate()
+
 include("../data/barotropic.jl")
 using .BarotropicData
 
@@ -13,7 +15,7 @@ using Statistics
 ###############################################################################
 #-- Training parameters
 dataset_filepath = "./data/datasets/barotropic_T21_2D_8day.jld"
-save_name = "barotropic_T21_2D_baseESN_5Kres_MOD2_norm.jld"  # Name of file to save results to
+save_name = "barotropic_T21_2D_baseESN_5Kres_MOD2_norm_HPCTEST.jld"  # Name of file to save results to
 
 model_params = (
   approx_res_size = 5000,   # size of the reservoir; NOTE: Must be larger than all of input params.

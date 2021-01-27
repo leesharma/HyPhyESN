@@ -1,3 +1,5 @@
+using Pkg; Pkg.activate("."); Pkg.instantiate()
+
 include("../data/spectral_dynamics.jl")
 using .SpectralData
 
@@ -12,7 +14,7 @@ using Statistics
 ###############################################################################
 #-- Training parameters
 dataset_filepath = "./data/datasets/spectral_T21_nd3_500day_100spinup.jld"
-save_name = "spectral_T21_nd3_baseESN_res25K_MOD2_norm.jld"  # Name of file to save results to
+save_name = "spectral_T21_nd3_baseESN_res25K_MOD2_norm_HPCTEST.jld"  # Name of file to save results to
 
 model_params = (
   approx_res_size = 25000,   # size of the reservoir; NOTE: Must be larger than all of input params.
