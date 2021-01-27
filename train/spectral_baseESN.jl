@@ -41,7 +41,6 @@ train_len = floor(Int64, (end_day-spinup_day)*(3/4))
 predict_len = ceil(Int64, (end_day-spinup_day)*(1/4))
 ###############################################################################
 
-
 # Load the data
 op_man, train_u, train_v, train_P, train_T, test_u, test_v, test_P, test_T = SpectralData.train_test(dataset_filepath, train_len, predict_len)
 println("Data loaded. ...")
@@ -68,14 +67,15 @@ nθ = mesh.nθ
 nd = mesh.nd
 
 # Initialize ESN, then train, & predict
-esn = @time BaseESN.esn_init(train_data, opts=model_params)
+
+esn = @time BaseESN.large_esn_init(train_data, opts=model_params)
 println("ESN initialized. ...")
 W_out = @time BaseESN.train(esn, beta=model_params.beta)
 println("ESN trained. ...")
 
 # Convert predict_len to timesteps for .predict()
 predict_len = floor(Int64, (predict_len*day_to_sec)/Δt)
-prediction = @time BaseESN.predict(esn, predict_len, W_out)
+prediction = @time BaseESN.large_predict(esn, predict_len, W_out)
 println("Predictions completed. ...")
 
 # Separate u, v, P, T from prediction array, reshape them to grid shape
