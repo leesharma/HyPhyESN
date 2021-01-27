@@ -10,8 +10,9 @@ using ReservoirComputing: ESN, ESNtrain, ESNpredict, NLAT2
 using JGCM
 using JLD
 using Statistics
+using Random  # To set seed for debugging
 
-
+Random.seed!(1233)
 ###############################################################################
 #-- Training parameters
 dataset_filepath = "./data/datasets/barotropic_T21_2D_8day.jld"
@@ -60,9 +61,12 @@ train_v = (train_v.-v_mean)./v_std
 train_data = cat(train_u, train_v, dims=1)
 
 # Initialize ESN, then train, & predict
-esn = BaseESN.esn_init(train_data, opts=model_params)
-W_out = BaseESN.train(esn, beta=model_params.beta)
-prediction = BaseESN.predict(esn, predict_len, W_out)
+esn = @time BaseESN.large_esn_init(train_data, opts=model_params)
+println("ESN initialized. ...")
+W_out = @time BaseESN.train(esn, beta=model_params.beta)
+println("ESN trained. ...")
+prediction = @time BaseESN.large_predict(esn, predict_len, W_out)
+println("Predictions completed. ...")
 
 # Separate u & v from prediction array, reshape them to grid shape
 prediction_u = prediction[1:Int64(size(prediction)[1]/2),:]

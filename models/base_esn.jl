@@ -1,6 +1,9 @@
 module BaseESN
   export run_trial
 
+  include("./large_ESN_functions.jl")
+  using .LargeESN
+
   using ReservoirComputing: ESN, ESNtrain, ESNpredict, NLAT2
 
   # default model parameters
@@ -33,6 +36,21 @@ module BaseESN
     )
   end
 
+  function large_esn_init(train_data; opts=default_params)
+      """Create echo state network, optimized for large networks"""
+      LargeESN.large_ESN(
+        opts.approx_res_size,
+        train_data,
+        opts.degree,
+        opts.radius,
+        activation = opts.activation,
+        sigma = opts.sigma,
+        alpha = opts.alpha,
+        nla_type = opts.nla_type,
+        extended_states = opts.extended_states
+      )
+    end
+
   function train(esn; beta=default_params.beta)
     """Returns a trained readout layer using ridge regression."""
     W_out = ESNtrain(esn, beta)
@@ -41,6 +59,12 @@ module BaseESN
   function predict(esn, predict_len, W_out)
     """Predict output sequence of predict_len using the given ESN and W_out."""
     output = ESNpredict(esn, predict_len, W_out)
+  end
+
+  function large_predict(esn, predict_len, W_out)
+    """Predict output sequence of predict_len using the given ESN and W_out.
+    Optimized for large datasets."""
+    output = large_ESNpredict(esn, predict_len, W_out)
   end
 
   function run_trial(train_data, test_data; opts=default_params)
