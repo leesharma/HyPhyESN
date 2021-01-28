@@ -17,7 +17,7 @@ using Statistics
 ###############################################################################
 #-- Training parameters
 dataset_filepath = "./data/datasets/spectral_T21_nd3_500day_100spinup.jld"
-save_name = "spectral_T21_nd3_baseESN_res25K_MOD2_norm_HPCTEST22.jld"  # Name of file to save results to
+save_name = "spectral_T21_nd3_baseESN_res25K_MOD2_norm_HPCTEST22"  # Name of file to save results to
 
 model_params = (
   approx_res_size = 25000,   # size of the reservoir; NOTE: Must be larger than all of input params.
@@ -118,11 +118,14 @@ save_model_params = (
 )
 
 # Save the results
-save("./train/results/$save_name","model_params",save_model_params,"pred_u_grid",pred_u_grid,
+save("./train/results/$save_name.jld","model_params",save_model_params,"pred_u_grid",pred_u_grid,
      "test_u_grid",test_u_grid,"pred_v_grid",pred_v_grid,"test_v_grid",test_v_grid,
      "pred_P_grid",pred_P_grid,"test_P_grid",test_P_grid,"pred_T_grid",pred_T_grid,
      "test_T_grid",test_T_grid,"W_out",W_out,compress = true)
 println("Results saved. ...")
+
+spectral_evaluate(dataset_filepath, save_name)
+println("Model evaluation completed. ...")
 
 # Plot the prediction & ground truth for quick peek
 # time_step = 1 # Time step to plot

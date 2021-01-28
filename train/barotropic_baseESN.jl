@@ -6,17 +6,18 @@ using .BarotropicData
 include("../models/base_esn.jl")
 using .BaseESN
 
+include("../eval/primitive_metrics.jl")
+using .PrimitivesMetrics
+
 using ReservoirComputing: ESN, ESNtrain, ESNpredict, NLAT2
 using JGCM
 using JLD
 using Statistics
-using Random  # To set seed for debugging
 
-Random.seed!(1233)
 ###############################################################################
 #-- Training parameters
 dataset_filepath = "./data/datasets/barotropic_T21_2D_8day.jld"
-save_name = "barotropic_T21_2D_baseESN_5Kres_MOD2_norm_HPCTEST.jld"  # Name of file to save results to
+save_name = "barotropic_T21_2D_baseESN_5Kres_MOD2_norm_HPCTEST"  # Name of file to save results to
 
 model_params = (
   approx_res_size = 5000,   # size of the reservoir; NOTE: Must be larger than all of input params.
@@ -94,10 +95,13 @@ save_model_params = (
 )
 
 # Save the results
-save("./train/results/$save_name","model_params",save_model_params,"pred_u_grid",pred_u_grid,
+save("./train/results/$save_name.jld","model_params",save_model_params,"pred_u_grid",pred_u_grid,
      "test_u_grid",test_u_grid,"pred_v_grid",pred_v_grid,"test_v_grid",test_v_grid,
      "W_out",W_out,compress = true)
 println("Results saved. ...")
+
+barotropic_evaluate(dataset_filepath, save_name)
+println("Model evaluation completed. ...")
 
 # Plot the first timestep prediction & ground truth for quick peek
 # Lat_Lon_Pcolormesh(mesh, pred_u_grid,  1, "./train/plots/baseESN_barotropic_2D_pred_u_20Kres_MOD1.png")
