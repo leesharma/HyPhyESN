@@ -6,6 +6,9 @@ using .SpectralData
 include("../models/base_esn.jl")
 using .BaseESN
 
+include("../eval/primitive_metrics.jl")
+using .PrimitivesMetrics
+
 using ReservoirComputing: ESN, ESNtrain, ESNpredict, NLAT2
 using JGCM
 using JLD

@@ -49,8 +49,7 @@ module LargeESN
        replace!(W, -1.0=>0.0)
        W = sparse(W)
        # Taking the max of 3 converges better'
-       println("DEBUG: calculating eigs()...") # DEBUG
-       rho_w = @time maximum(abs.(eigs(W, nev=3, which=:LM, maxiter = 100000, ritzvec=false)[1])) # DEBUG
+       rho_w = maximum(abs.(eigs(W, nev=3, which=:LM, maxiter = 100000, ritzvec=false)[1]))
        # Convert back to dense matrix for future operations
        W = Matrix(W)
        W .*= radius/rho_w
@@ -70,9 +69,8 @@ module LargeESN
         x = esn.states[:, end]
         W = sparse(esn.W)
 
-        println("DEBUG: predicting new states...") # DEBUG
         if esn.extended_states == false
-            @time for i=1:predict_len
+            for i=1:predict_len
                 x_new = nla(esn.nla_type, x)
                 out = (W_out*x_new)
                 output[:, i] = out
@@ -104,19 +102,16 @@ module LargeESN
         W = sparse(W)
 
         # Initialize the states matrix
-        println("DEBUG: initializing states_matrix...") # DEBUG
-        states = @time zeros(Float64, res_size, train_len)
+        states = zeros(Float64, res_size, train_len)
 
         # Multiply W_in*train_data in advance of the for loop
         W_in_x = Matrix{Float64}(undef, res_size, train_len)
-        println("DEBUG: Multiplying W_in*train_data...") # DEBUG
-        @time mul!(W_in_x, W_in, train_data)
+        mul!(W_in_x, W_in, train_data)
 
         # Initialize an empty matrix to hold the W*states calculation
         y = Matrix{Float64}(undef, res_size, 1)
 
-        println("DEBUG: filling states_matrix...") # DEBUG
-        @time for i=1:train_len-1 # DEBUG
+        for i=1:train_len-1
             states[:, i+1] = large_leaky_fixed_rnn(activation, alpha, W, W_in_x[:,i], states[:, i], y)
         end
 
@@ -126,15 +121,10 @@ module LargeESN
         else
             return states
         end
-        println("DEBUG: states_matrix completed...") # DEBUG
     end
 
     function leaky_fixed_rnn(activation, alpha, W, W_in, x, y)
-        W_x = Matrix{Float64}(undef, size(W,1), size(x,2))
-        mul!(W_x, W, x)
-        W_in_y = Matrix{Float64}(undef, size(W_in, 1), size(y, 2))
-        mul!(W_in_y, W_in, y)
-        return (1-alpha).*x + alpha*activation.(W_x+W_in_y)
+        return (1-alpha).*x + alpha*activation.((W*x)+(W_in*y))
     end
 
     function large_leaky_fixed_rnn(activation, alpha, W, W_in_x, states, y)
