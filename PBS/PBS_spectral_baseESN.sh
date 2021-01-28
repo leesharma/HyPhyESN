@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-#PBS -l walltime=18:00:00
+#PBS -l walltime=6:00:00
 #PBS -l select=1:ncpus=40:mpiprocs=40
 #PBS -l place=scatter:excl
-#PBS -N spectral_baseESN_TEST
+#PBS -N spectral_baseESN_TEST_2
 #PBS -q standard
 ##PBS -r y
 #PBS -j oe

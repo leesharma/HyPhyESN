@@ -1,0 +1,36 @@
+Start Prologue v2.5.3 Wed Jan 27 11:47:59 EST 2021 
+r3i3n34: MemFree:        120533668 kB
+End Prologue v2.5.3 Wed Jan 27 11:48:03 EST 2021 
+job starting at Wed Jan 27 11:48:08 EST 2021 on r3i3n34
+starting in /p/home/mrziema
+ Activating environment at `~/projects/HyPhyESN/Project.toml`
+Data loaded. ...
+DEBUG: calculating eigs()...
+  9.275201 seconds (1.57 M allocations: 90.884 MiB, 2.75% gc time)
+DEBUG: initializing states_matrix...
+  1.918893 seconds (2 allocations: 3.296 GiB, 0.38% gc time)
+DEBUG: Multiplying W_in*train_data...
+624.456606 seconds
+DEBUG: filling states_matrix...
+ 25.876849 seconds (416.74 k allocations: 23.083 GiB, 7.15% gc time)
+680.478109 seconds (15.93 M allocations: 42.944 GiB, 0.50% gc time)
+ESN initialized. ...
+2296.294559 seconds (1.23 M allocations: 22.456 GiB, 0.05% gc time)
+ESN trained. ...
+DEBUG: predicting new states...
+15108.471510 seconds (295.12 M allocations: 36.261 GiB, 0.04% gc time)
+15111.802162 seconds (297.47 M allocations: 37.471 GiB, 0.04% gc time)
+Predictions completed. ...
+Results saved. ...
+Run complete!
+Program ended with status  on Wed Jan 27 16:53:13 EST 2021
+Start Epilogue v2.5.3 Wed Jan 27 16:53:16 EST 2021 
+Memory usage reported in GB
+                    % of     user     user     user    total    total
+Node               limit      max    limit  current  current     phys
+r3i3n34            30.08    35.49   118.00     3.90     4.59   125.55
+Memory summary:
+		min   35.49 GB
+		max   35.49 GB
+		ave   35.49 GB
+End Epilogue v2.5.3 Wed Jan 27 16:53:21 EST 2021 
