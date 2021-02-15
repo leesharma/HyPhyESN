@@ -76,7 +76,7 @@ module Metrics
 
   Returns a stacked plot showing the X, Y, and Z groundtruth and prediction componants.
   """
-  function plot_predictions(y, y_pred; labels=["X","Y","Z"], xmax=size(y)[2], dt=1)
+  function plot_predictions(y, y_pred; labels=["X","Y","Z"], xmax=size(y)[2], dt=1, outfile=nothing)
     dims, n = size(y)
     x = range(1, dt*n, length=n) * lyapunov_max  # scale by largest Lyapunov exponent
 
@@ -91,6 +91,12 @@ module Metrics
       ylabel!(plt, labels[feature_idx], subplot=feature_idx)
     end
     xlabel!(plt, "\$\\lambda_{max}t\$", subplot=dims)
+
+    # save output
+    if outfile!=nothing
+      savefig(plt, outfile)
+    end
+
     plt
   end
 
@@ -100,7 +106,7 @@ module Metrics
   Plots the instantaneous error over time. Shows a horizontal marker for max
   error level (for the time horizon calculation).
   """
-  function plot_error(y, y_pred; labels=["X","Y","Z"], errors=normalized_errors(y,y_pred), E_max=0.4, dt=1)
+  function plot_error(y, y_pred; labels=["X","Y","Z"], errors=normalized_errors(y,y_pred), E_max=0.4, dt=1, outfile=nothing)
     n = size(errors,1)
     x = range(1, dt*n, length=n) * lyapunov_max  # scale by largest Lyapunov exponent
 
@@ -110,6 +116,12 @@ module Metrics
     plot!(plt, x, repeat([E_max],n), label="Max error target")
     ylabel!(plt, "Normalized Error")
     xlabel!(plt, "\$\\lambda_{max}t\$")
+
+    # save output
+    if outfile!=nothing
+      savefig(plt, outfile)
+    end
+
     plt
   end
 
