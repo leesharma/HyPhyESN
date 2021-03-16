@@ -14,15 +14,21 @@ import PyPlot
 using Statistics
 using Plots
 
-# Set the filepath for the dataset the model was trained on
-dataset_filepath = "./data/datasets/spectral_T21_nd3_500day_100spinup.jld"
-#dataset_filepath = "./data/datasets/barotropic_T21_2D_8day.jld"
-# Set the name for the trained model and predictions (not path)
-model_name = "spectral_T21_nd3_baseESN_res25K_MOD2_norm"
+# #-- Set the filepath for the dataset the model was trained on
+# dataset_filepath = "./data/datasets/spectral_T21_nd3_500day_100spinup.jld"
+#
+# #-- Set the name for the trained model and predictions (not path)
+# model_name = "spectral_T21_nd3_baseESN_job10"
+#
+# #-- If barotropic or spectral systems, use one of the below.
+# #barotropic_evaluate(dataset_filepath, model_name)
+# spectral_evaluate(dataset_filepath, model_name)
 
-#-- Pick which
-#barotropic_evaluate(dataset_filepath, model_name)
-spectral_evaluate(dataset_filepath, model_name)
+#-- For CFSR, set name of save directory
+save_name = "CFSR_T63_2year_3height_baseESN_ver3"
+#-- For CFSR, set directory of the saved trained model
+model_filepath = "E:/HyPhyESN_Datasets/Results/CFSR_T63_2year_3height_baseESN_ver3.jld"
+CFSR_evaluate(model_filepath, save_name)
 
 
 # #-- For manual printing

@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-#PBS -l walltime=6:00:00
-#PBS -l select=1:ncpus=40:mpiprocs=40
+#PBS -l walltime=24:00:00
+#PBS -l select=1:ncpus=40:mpiprocs=1:bigmem=1
 #PBS -l place=scatter:excl
-#PBS -N spectral_baseESN_job3
+#PBS -N CFSR_baseESN_job1
 #PBS -q standard
 ##PBS -r y
 #PBS -j oe
@@ -15,9 +15,9 @@ echo starting in `pwd`
 #
 #
 cd /p/home/mrziema/projects/HyPhyESN
-julia train/spectral_base_job3.jl
+julia train/CFSR_baseESN.jl
 
 set st=$status
-echo "Program ended with status $st on `date`" 
+echo "Program ended with status $st on `date`"
 
 exit $st

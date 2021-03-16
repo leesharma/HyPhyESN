@@ -3,7 +3,7 @@
 #PBS -l walltime=8:00:00
 #PBS -l select=1:ncpus=40:mpiprocs=40
 #PBS -l place=scatter:excl
-#PBS -N spectral_baseESN_TEST_3
+#PBS -N spectral_baseESN_NAME
 #PBS -q standard
 ##PBS -r y
 #PBS -j oe
@@ -18,6 +18,6 @@ cd /p/home/mrziema/projects/HyPhyESN
 julia train/spectral_baseESN.jl
 
 set st=$status
-echo "Program ended with status $st on `date`" 
+echo "Program ended with status $st on `date`"
 
 exit $st
