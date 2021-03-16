@@ -155,18 +155,23 @@ module SpectralData
 
         ###############################################################################
         # Name of dataset folder to save
-        file_name = "spectral_T21_nd3_500day_100spinup.jld"
+        file_name = "spectral_T62_nd6_500day_100spinup.jld"
 
         # Data generation parameters
         # T21 grid
-        num_fourier = 21  # Fourier wave number truncation
-        nθ = 32  # Latitudinal grid size
-        nd = 3  # Vertical slices. 20 is default.
+        # num_fourier = 21  # Fourier wave number truncation
+        # nθ = 32  # Latitudinal grid size
+        # nd = 3  # Vertical slices. 20 is default.
 
         # T42 grid
         #num_fourier = 42
         #nθ = 64
         #nd = 20
+
+        # T62 grid, matching CFSR Reanalysis
+        num_fourier = 62
+        nθ = 96
+        nd = 6
 
         # CFS standard spectral grid resolution, T126L64
         #num_fourier = 126
@@ -185,11 +190,20 @@ module SpectralData
         #Finalize_Output!(op_man, "HS_OpM.dat", "HS_mean.dat")  # To implement parameterizations
 
         # Save the data
-        save("./data/datasets/$file_name","op_man",op_man,"mesh",mesh,
+        # HyPhyESN Local Data Directory
+        # save("./data/datasets/$file_name","op_man",op_man,"mesh",mesh,
+        #      "temporal_grid_u",temporal_grid_u,"temporal_grid_v",temporal_grid_v,
+        #      "temporal_grid_P",temporal_grid_P,"temporal_grid_T",temporal_grid_T,
+        #      "atmo_data",atmo_data,"dyn_data",dyn_data,"vert_coord",vert_coord,
+        #      compress = true)
+
+        # Ziemann Desktop Large Memory Harddrive
+        save("E:/HyPhyESN_Datasets/$file_name","op_man",op_man,"mesh",mesh,
              "temporal_grid_u",temporal_grid_u,"temporal_grid_v",temporal_grid_v,
              "temporal_grid_P",temporal_grid_P,"temporal_grid_T",temporal_grid_T,
              "atmo_data",atmo_data,"dyn_data",dyn_data,"vert_coord",vert_coord,
              compress = true)
+
         println("Data saved.")
     end
 

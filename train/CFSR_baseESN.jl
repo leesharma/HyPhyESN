@@ -9,18 +9,20 @@ using .BaseESN
 include("../eval/primitive_metrics.jl")
 using .PrimitivesMetrics
 
-using ReservoirComputing: ESN, ESNtrain, ESNpredict, NLAT2
+using ReservoirComputing: ESN, ESNtrain, ESNpredict, NLAT2, Ridge
 using JGCM
 using JLD
 using Statistics
+using MLJLinearModels
 
 ###############################################################################
 #-- Training parameters
-dataset_filepath = "./data/datasets/spectral_T21_nd3_500day_100spinup.jld"
-save_name = "spectral_T21_nd3_baseESN_res25K_MOD2_norm_HPCTEST22"  # Name of file to save results to
+dataset_filepath = "./data/datasets/CFSR_T62_2year_3height.jld"
+# dataset_filepath = "E:/HyPhyESN_Datasets/CFSR/T62/CFSR_T62_2year_3height.jld"
+save_name = "CFSR_T63_2year_3height_baseESN_ver3"  # Name of file to save results to
 
 model_params = (
-  approx_res_size = 25000,   # size of the reservoir; NOTE: Must be larger than all of input params.
+  approx_res_size = 110000,   # size of the reservoir; NOTE: Must be larger than all of input params.
   radius = 1.0,              # desired spectral radius
   activation = tanh,         # neuron activation function
   degree = 3,                # degree of connectivity of the reservoir
@@ -31,23 +33,57 @@ model_params = (
   extended_states = false,   # if true extends the states with the input
 )
 
-# Get end day & spinup day parameters from the dataset.
-op_man = load(dataset_filepath)["op_man"]
-end_day = op_man.end_time/86400
-spinup_day = op_man.spinup_day
-mesh = load(dataset_filepath)["mesh"]
-Δt = 1200  # Default value used by the integrator.
-day_to_sec = 86400
+# Set the ratio of data for training, and ratio for testing.
+train_ratio = 3/4
+predict_ratio = 1/4
 
-# Define number of days in training and prediction set. Spinup_day is thrown away
-# automatically, defined at dataset generation. Here, 3/4 of remaining data is training, 1/4 is predict.
-# Can change this to whatever you want.
-train_len = floor(Int64, (end_day-spinup_day)*(3/4))
-predict_len = ceil(Int64, (end_day-spinup_day)*(1/4))
 ###############################################################################
 
 # Load the data
-op_man, train_u, train_v, train_P, train_T, test_u, test_v, test_P, test_T = SpectralData.train_test(dataset_filepath, train_len, predict_len)
+temporal_grid_u = load(dataset_filepath)["temporal_grid_u"]
+temporal_grid_v = load(dataset_filepath)["temporal_grid_v"]
+temporal_grid_P = load(dataset_filepath)["temporal_grid_P"]
+temporal_grid_T = load(dataset_filepath)["temporal_grid_T"]
+
+# Grab information from the dataset
+total_time = size(temporal_grid_u)[4]
+nθ = size(temporal_grid_u)[2]
+nλ = size(temporal_grid_u)[1]
+nd = size(temporal_grid_u)[3]
+
+# Convert day parameters to seconds, then divide by time step to get array indices
+train_len = floor(Int64, train_ratio*total_time)
+predict_len = floor(Int64, predict_ratio*total_time)
+
+# flatten the spatial components. Leaves us a 2D array of spatial solutions & time step
+data_u = reshape(temporal_grid_u[:,:,:,:], (:,size(temporal_grid_u)[4]))
+data_v = reshape(temporal_grid_v[:,:,:,:], (:,size(temporal_grid_v)[4]))
+data_P = reshape(temporal_grid_P[:,:,:,:], (:,size(temporal_grid_P)[4]))
+data_T = reshape(temporal_grid_T[:,:,:,:], (:,size(temporal_grid_T)[4]))
+
+# Clear Memory
+temporal_grid_u = 0
+temporal_grid_v = 0
+temporal_grid_P = 0
+temporal_grid_T = 0
+
+# Define train and test sets
+train_u = data_u[:, 1:train_len-1]
+train_v = data_v[:, 1:train_len-1]
+train_P = data_P[:, 1:train_len-1]
+train_T = data_T[:, 1:train_len-1]
+test_u = data_u[:, train_len:train_len+predict_len-1]
+test_v = data_v[:, train_len:train_len+predict_len-1]
+test_P = data_P[:, train_len:train_len+predict_len-1]
+test_T = data_T[:, train_len:train_len+predict_len-1]
+
+# Clear Memory
+data_u = 0
+data_v = 0
+data_P = 0
+data_T = 0
+
+
 println("Data loaded. ...")
 
 u_mean = mean(train_u)
@@ -68,35 +104,38 @@ train_T = (train_T.-T_mean)./T_std
 # Combine training data.
 # NOTE: Moved P to the end of this flattened array for easier indexing. Only has one vertical dimension.
 train_data = cat(train_u, train_v, train_T, train_P, dims=1)
-nθ = mesh.nθ
-nd = mesh.nd
 
 # Initialize ESN, then train, & predict
 
 esn = @time BaseESN.large_esn_init(train_data, opts=model_params)
 println("ESN initialized. ...")
 W_out = @time BaseESN.train(esn, beta=model_params.beta)
+
+#-- For iterative ridge solver, use the below block and comment out .train() above.
+# solver = MLJLinearModels.Analytical(iterative=true)
+# ridge = Ridge(model_params.beta, solver)
+# W_out = @time BaseESN.ESNtrain(ridge, esn)
+
 println("ESN trained. ...")
 
 # Convert predict_len to timesteps for .predict()
-predict_len = floor(Int64, (predict_len*day_to_sec)/Δt)
 prediction = @time BaseESN.large_predict(esn, predict_len, W_out)
 println("Predictions completed. ...")
 
 # Separate u, v, P, T from prediction array, reshape them to grid shape
 # NOTE: Moved P to the end of this flattened array for easier indexing.
-prediction_u = prediction[1:Int64(nθ*2*nθ*nd),:]
-prediction_v = prediction[Int64(nθ*2*nθ*nd+1):Int64(nθ*4*nθ*nd),:]
-prediction_T = prediction[Int64(nθ*4*nθ*nd+1):Int64(nθ*6*nθ*nd),:]
-prediction_P = prediction[Int64(nθ*6*nθ*nd+1):end,:]
-pred_u_grid = reshape(prediction_u, (2*nθ, nθ, nd, :))
-test_u_grid = reshape(test_u, (2*nθ, nθ, nd, :))
-pred_v_grid = reshape(prediction_v, (2*nθ, nθ, nd, :))
-test_v_grid = reshape(test_v, (2*nθ, nθ, nd, :))
-pred_P_grid = reshape(prediction_P, (2*nθ, nθ, 1, :))
-test_P_grid = reshape(test_P, (2*nθ, nθ, 1, :))
-pred_T_grid = reshape(prediction_T, (2*nθ, nθ, nd, :))
-test_T_grid = reshape(test_T, (2*nθ, nθ, nd, :))
+prediction_u = prediction[1:Int64(nλ*nθ*nd),:]
+prediction_v = prediction[Int64(nλ*nθ*nd+1):Int64(2*nλ*nθ*nd),:]
+prediction_T = prediction[Int64(2*nλ*nθ*nd+1):Int64(3*nλ*nθ*nd),:]
+prediction_P = prediction[Int64(3*nλ*nθ*nd+1):end,:]
+pred_u_grid = reshape(prediction_u, (nλ, nθ, nd, :))
+test_u_grid = reshape(test_u, (nλ, nθ, nd, :))
+pred_v_grid = reshape(prediction_v, (nλ, nθ, nd, :))
+test_v_grid = reshape(test_v, (nλ, nθ, nd, :))
+pred_P_grid = reshape(prediction_P, (nλ, nθ, 1, :))
+test_P_grid = reshape(test_P, (nλ, nθ, 1, :))
+pred_T_grid = reshape(prediction_T, (nλ, nθ, nd, :))
+test_T_grid = reshape(test_T, (nλ, nθ, nd, :))
 
 # Undo standardization to compare results
 pred_u_grid = (pred_u_grid.*u_std).+u_mean
@@ -117,15 +156,18 @@ save_model_params = (
   extended_states = model_params.extended_states,
 )
 
+#-- Set where to save the model once trained
+model_filepath = "./train/results/$save_name.jld"
+
 # Save the results
-save("./train/results/$save_name.jld","model_params",save_model_params,"pred_u_grid",pred_u_grid,
+save(model_filepath,"model_params",save_model_params,"pred_u_grid",pred_u_grid,
      "test_u_grid",test_u_grid,"pred_v_grid",pred_v_grid,"test_v_grid",test_v_grid,
      "pred_P_grid",pred_P_grid,"test_P_grid",test_P_grid,"pred_T_grid",pred_T_grid,
      "test_T_grid",test_T_grid,"W_out",W_out,compress = true)
 println("Results saved. ...")
 
-spectral_evaluate(dataset_filepath, save_name)
-println("Model evaluation completed. ...")
+# CFSR_evaluate(dataset_filepath, model_filepath, save_name)
+# println("Model evaluation completed. ...")
 
 # Plot the prediction & ground truth for quick peek
 # time_step = 1 # Time step to plot
